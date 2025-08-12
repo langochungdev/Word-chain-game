@@ -7,6 +7,22 @@ import { usePlayers } from '@/composables/usePlayers'
 import { useChat } from '@/composables/useChat'
 import { useSuggestions } from '@/composables/useSuggestions'
 
+// Chặn toàn bộ lỗi chưa bắt được và hiển thị alert
+window.addEventListener('error', (event) => {
+    console.error('[GLOBAL ERROR]', event.error || event.message, event)
+    alert(
+        '[ERROR] ' + (event.error?.message || event.message || 'Unknown error'),
+    )
+})
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('[UNHANDLED PROMISE REJECTION]', event.reason, event)
+    alert(
+        '[UNHANDLED PROMISE] ' +
+            (event.reason?.message || event.reason || 'Unknown rejection'),
+    )
+})
+
 // ====== Khởi tạo biến chính ======
 const route = useRoute()
 const roomId = ref(route.params.id)
@@ -262,7 +278,7 @@ watch(gameStarted, async (val) => {
 <template>
     <div class="container-fluid vh-100 d-flex flex-column app-shell">
         <!-- ==== UI phòng chờ ==== -->
-        <div v-if="!gameStarted">
+        <template v-if="!gameStarted">
             <!-- Header lobby: PIN | Target bên trái, Bên phải: Số người + Winner (nếu có) -->
             <div
                 class="d-flex align-items-center p-2 bg-light border-bottom sticky-top"
@@ -381,10 +397,10 @@ watch(gameStarted, async (val) => {
                 </div>
                 <div class="modal-backdrop show"></div>
             </div>
-        </div>
+        </template>
 
         <!-- ==== UI phòng chat ==== -->
-        <div v-else>
+        <template v-else>
             <!-- Header chat: BÊN TRÁI = Leader | Mục tiêu | Điểm của bạn; BÊN PHẢI = Gợi ý từ | DataChannel -->
             <div
                 class="d-flex justify-content-between align-items-center p-2 bg-light border-bottom sticky-top"
@@ -489,7 +505,7 @@ watch(gameStarted, async (val) => {
                     {{ messageError }}
                 </div>
             </div>
-        </div>
+        </template>
     </div>
 </template>
 
