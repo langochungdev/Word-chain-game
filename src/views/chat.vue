@@ -262,7 +262,7 @@ watch(gameStarted, async (val) => {
 <template>
     <div class="container-fluid vh-100 d-flex flex-column app-shell">
         <!-- ==== UI phòng chờ ==== -->
-        <template v-if="!gameStarted">
+        <div v-if="!gameStarted">
             <!-- Header lobby: PIN | Target bên trái, Bên phải: Số người + Winner (nếu có) -->
             <div
                 class="d-flex align-items-center p-2 bg-light border-bottom sticky-top"
@@ -381,10 +381,10 @@ watch(gameStarted, async (val) => {
                 </div>
                 <div class="modal-backdrop show"></div>
             </div>
-        </template>
+        </div>
 
         <!-- ==== UI phòng chat ==== -->
-        <template v-else>
+        <div v-else>
             <!-- Header chat: BÊN TRÁI = Leader | Mục tiêu | Điểm của bạn; BÊN PHẢI = Gợi ý từ | DataChannel -->
             <div
                 class="d-flex justify-content-between align-items-center p-2 bg-light border-bottom sticky-top"
@@ -489,7 +489,7 @@ watch(gameStarted, async (val) => {
                     {{ messageError }}
                 </div>
             </div>
-        </template>
+        </div>
     </div>
 </template>
 
