@@ -23,26 +23,29 @@ export function usePlayers(roomId, isHost, myId, myName, targetScore, initChat, 
   //   }
   //   initChat()
   // }
+// Trong usePlayers.js
 const confirm = async () => {
-  showModal.value = false
-  await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
-  if (isHost.value) {
-    await setDoc(
-      roomRef,
-      { targetScore: targetScore.value, gameStarted: false, hostId: myId },
-      { merge: true }
-    )
-  }
-  // Chỉ init chat nếu chưa kết nối
-  if (getReadyState() === 'closed') {
++   console.log('[DEBUG] confirm() called, myId=', myId)
+    showModal.value = false
+    await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
+    if (isHost.value) {
++       console.log('[DEBUG] Host set targetScore/gameStarted=false')
+        await setDoc(
+            roomRef,
+            { targetScore: targetScore.value, gameStarted: false, hostId: myId },
+            { merge: true }
+        )
+    }
++   console.log('[DEBUG] Calling initChat() from confirm()')
     initChat()
-  }
 }
 
-  const startGame = async () => {
+const startGame = async () => {
     if (!isHost.value) return
++   console.log('[DEBUG] startGame() called by host')
     await updateDoc(roomRef, { gameStarted: true })
-  }
+}
+
 
   const readyUp = async () => {
     await updateDoc(doc(playersRef, myId), { ready: true })
