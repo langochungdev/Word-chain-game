@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { db } from '@/utils/firebase'
 import { doc, setDoc, updateDoc, onSnapshot, collection } from 'firebase/firestore'
-
+import { getReadyState } from '@/utils/webrtc'
 export function usePlayers(roomId, isHost, myId, myName, targetScore, initChat, showModal) {
   const players = ref([])
   const gameStarted = ref(false)
