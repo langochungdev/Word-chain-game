@@ -11,18 +11,33 @@ export function usePlayers(roomId, isHost, myId, myName, targetScore, initChat, 
   const roomRef = doc(db, 'rooms', roomId.value)
   const playersRef = collection(roomRef, 'players')
 
-  const confirm = async () => {
-    showModal.value = false
-    await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
-    if (isHost.value) {
-      await setDoc(
-        roomRef,
-        { targetScore: targetScore.value, gameStarted: false, hostId: myId },
-        { merge: true }
-      )
-    }
+  // const confirm = async () => {
+  //   showModal.value = false
+  //   await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
+  //   if (isHost.value) {
+  //     await setDoc(
+  //       roomRef,
+  //       { targetScore: targetScore.value, gameStarted: false, hostId: myId },
+  //       { merge: true }
+  //     )
+  //   }
+  //   initChat()
+  // }
+const confirm = async () => {
+  showModal.value = false
+  await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
+  if (isHost.value) {
+    await setDoc(
+      roomRef,
+      { targetScore: targetScore.value, gameStarted: false, hostId: myId },
+      { merge: true }
+    )
+  }
+  // Chỉ init chat nếu chưa kết nối
+  if (getReadyState() === 'closed') {
     initChat()
   }
+}
 
   const startGame = async () => {
     if (!isHost.value) return

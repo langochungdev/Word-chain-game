@@ -13,16 +13,7 @@ const roomId = ref(route.params.id)
 const isHost = ref(route.query.host === '1')
 const myName = ref('')
 const targetScore = ref()
-
-// --- Sửa: myId cố định theo thiết bị ---
-let storedId = localStorage.getItem('wordgame_myid')
-if (!storedId) {
-    storedId = Math.random().toString(36).slice(2)
-    localStorage.setItem('wordgame_myid', storedId)
-}
-const myId = storedId
-// --------------------------------------
-
+const myId = Math.random().toString(36).slice(2)
 const showModal = ref(true)
 const winner = ref(null)
 const showWinner = ref(false)
@@ -65,7 +56,7 @@ const leader = computed(() => {
     if (!gameStarted.value) return null
     const arr = Object.entries(scores.value)
     if (!arr.length) return null
-    return arr.sort((a, b) => b[1] - a[1])[0]
+    return arr.sort((a, b) => b[1] - a[1])[0] // [id, score]
 })
 
 // ====== Đồng bộ targetScore & gameStarted từ Firestore ======
@@ -74,6 +65,7 @@ onSnapshot(doc(db, 'rooms', roomId.value), (snap) => {
     const data = snap.data()
     targetScore.value = data?.targetScore ?? null
 
+    // Chỉ show ở phòng chờ và chỉ 1 lần theo mốc thời gian at
     if (
         !data?.gameStarted &&
         data?.winner &&
@@ -84,6 +76,7 @@ onSnapshot(doc(db, 'rooms', roomId.value), (snap) => {
         showWinner.value = true
         setTimeout(() => (showWinner.value = false), 20000)
 
+        // Host xóa winner sau khi đã hiện xong để các lần sau không hiện lại
         if (isHost.value) {
             setTimeout(
                 () =>
@@ -103,6 +96,7 @@ watch(targetScore, (val) => {
     }
 })
 
+// ====== Hàm reset local state (gọi khi game kết thúc hoặc khi Firestore báo về phòng chờ) ======
 function resetLocalGame() {
     scores.value = {}
     messages.value = []
@@ -113,8 +107,12 @@ function resetLocalGame() {
 // ====== Kiểm tra từ hợp lệ ======
 async function checkValidWord(rawWord) {
     const lower = rawWord.toLowerCase()
+
+    // Chỉ chữ cái
     if (!/^[a-z]+$/.test(lower)) return false
+    // Chặn từ có ít hơn 2 ký tự
     if (lower.length < 2) return false
+    // Chặn 2 ký tự lặp kiểu "ee", "aa", "zz"
     if (lower.length === 2 && lower[0] === lower[1]) return false
 
     try {
@@ -125,6 +123,7 @@ async function checkValidWord(rawWord) {
         const data = await res.json()
         if (!Array.isArray(data) || !data.length) return false
 
+        // Chỉ chấp nhận nghĩa "thật"
         const ALLOWED_POS = [
             'noun',
             'verb',
@@ -166,10 +165,13 @@ async function checkValidWord(rawWord) {
     }
 }
 
+// ====== Khi nhận từ từ người khác ======
 function onReceiveWord(word, fromId) {
     if (!gameStarted.value) return
     if (messages.value.some((m) => m.text.toLowerCase() === word.toLowerCase()))
         return
+
+    // Nếu đã về phòng chờ, bỏ qua mọi message lạc hậu
     if (!gameStarted.value) return
     lastWord.value = word
     scores.value[fromId] = (scores.value[fromId] || 0) + word.length
@@ -177,6 +179,7 @@ function onReceiveWord(word, fromId) {
     messages.value.push({ from: sender, text: word })
 }
 
+// ====== Gửi từ kèm kiểm tra luật ======
 async function sendWord() {
     const word = text.value.trim().toLowerCase()
     if (messages.value.some((m) => m.text.toLowerCase() === word)) {
@@ -188,6 +191,7 @@ async function sendWord() {
         messageError.value = 'Chưa bắt đầu ván mới.'
         return
     }
+
     messageError.value = ''
 
     if (messages.value.length === 0 && !isHost.value) {
@@ -210,14 +214,20 @@ async function sendWord() {
         return
     }
 
+    // Push tin của chính mình (cho cảm giác tức thời)
     messages.value.push({ from: myName.value, text: word })
+
+    // Gửi tin qua WebRTC
     sendRaw(word)
     lastWord.value = word
+
+    // Cộng điểm cục bộ + lưu Firestore
     scores.value[myId] = (scores.value[myId] || 0) + word.length
     await updateDoc(doc(db, 'rooms', roomId.value, 'players', myId), {
         score: scores.value[myId],
     })
 
+    // Kiểm tra thắng
     if (targetScore.value && scores.value[myId] >= targetScore.value) {
         await updateDoc(doc(db, 'rooms', roomId.value), {
             winner: {
@@ -236,7 +246,9 @@ async function sendWord() {
                 ready: false,
             })
         }
+        // Không gọi resetLocalGame() tại đây
     }
+
     text.value = ''
 }
 
