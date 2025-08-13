@@ -7,22 +7,6 @@ import { usePlayers } from '@/composables/usePlayers'
 import { useChat } from '@/composables/useChat'
 import { useSuggestions } from '@/composables/useSuggestions'
 
-// Chặn toàn bộ lỗi chưa bắt được và hiển thị alert
-window.addEventListener('error', (event) => {
-    console.error('[GLOBAL ERROR]', event.error || event.message, event)
-    alert(
-        '[ERROR] ' + (event.error?.message || event.message || 'Unknown error'),
-    )
-})
-
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('[UNHANDLED PROMISE REJECTION]', event.reason, event)
-    alert(
-        '[UNHANDLED PROMISE] ' +
-            (event.reason?.message || event.reason || 'Unknown rejection'),
-    )
-})
-
 // ====== Khởi tạo biến chính ======
 const route = useRoute()
 const roomId = ref(route.params.id)

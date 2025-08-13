@@ -1,46 +1,25 @@
-// composables/usePlayers.js
 import { ref, onMounted } from 'vue'
 import { db } from '@/utils/firebase'
 import { doc, setDoc, updateDoc, onSnapshot, collection } from 'firebase/firestore'
-import { getReadyState } from '@/utils/webrtc'
 export function usePlayers(roomId, isHost, myId, myName, targetScore, initChat, showModal) {
   const players = ref([])
   const gameStarted = ref(false)
-
-  // refs cố định
   const roomRef = doc(db, 'rooms', roomId.value)
   const playersRef = collection(roomRef, 'players')
 
-  // const confirm = async () => {
-  //   showModal.value = false
-  //   await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
-  //   if (isHost.value) {
-  //     await setDoc(
-  //       roomRef,
-  //       { targetScore: targetScore.value, gameStarted: false, hostId: myId },
-  //       { merge: true }
-  //     )
-  //   }
-  //   initChat()
-  // }
-// Trong usePlayers.js
-const confirm = async () => {
-  showModal.value = false
-  await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
-  if (isHost.value) {
-    await setDoc(
-      roomRef,
-      { targetScore: targetScore.value, gameStarted: false, hostId: myId },
-      { merge: true }
-    )
-  }
-  // Chỉ initChat nếu chưa kết nối
-  if (getReadyState() === 'closed') {
+  const confirm = async () => {
+    showModal.value = false
+    await setDoc(doc(playersRef, myId), { name: myName.value, ready: false, score: 0 })
+    if (isHost.value) {
+      await setDoc(
+        roomRef,
+        { targetScore: targetScore.value, gameStarted: false, hostId: myId },
+        { merge: true }
+      )
+    }
     initChat()
-  } else {
-    console.log('[DEBUG] Skip initChat, current readyState=', getReadyState())
   }
-}
+
 
 const startGame = async () => {
     if (!isHost.value) return
