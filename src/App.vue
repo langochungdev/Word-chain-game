@@ -292,9 +292,14 @@ function scheduleSnapshotBroadcast() {
 
 function connectWS() {
     ready.value = 'connecting'
-    const sock = new SockJS(
-        'http://word-chain-game-backend-production.up.railway.app/ws',
-    )
+
+    const WS_BASE = import.meta.env.PROD
+        ? 'https://word-chain-game-backend-production.up.railway.app/ws'
+        : location.protocol === 'https:'
+          ? 'https://word-chain-game-backend-production.up.railway.app/ws'
+          : 'http://localhost:8080/ws' // backend dev
+
+    const sock = new SockJS(WS_BASE) // KHÔNG dùng http khi trang đang https
     stompClient = Stomp.over(sock)
     stompClient.debug = null
     stompClient.connect(
