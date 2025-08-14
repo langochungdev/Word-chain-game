@@ -1,35 +1,53 @@
 <template>
-    <div class="container-fluid vh-100 d-flex flex-column app-shell">
-        <!-- header -->
-        <div
-            class="d-flex align-items-center p-2 bg-light border-bottom sticky-top gap-2"
-        >
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="fw-semibold">PIN phòng:</span>
-                <span class="badge bg-dark text-white">{{ roomId }}</span>
-            </div>
-            <div class="ms-3 d-flex align-items-center gap-2 flex-wrap">
+    <div class="container-fluid h-100dvh app-shell">
+        <!-- Header -->
+        <div class="chat-header border-bottom">
+            <div class="d-flex align-items-center gap-2">
                 <button
-                    class="btn btn-outline-primary btn-sm"
-                    @click="openTargetDialog"
+                    class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#playersOffcanvas"
+                    aria-controls="playersOffcanvas"
                 >
-                    🎯 Target: {{ targetScore }}
+                    👥 Người chơi
                 </button>
-                <!-- Switch Gợi ý -->
-                <div class="form-check form-switch m-0">
-                    <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="sugSwitch"
-                        v-model="suggestOn"
-                    />
-                    <label class="form-check-label" for="sugSwitch">
-                        Gợi ý
-                    </label>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="fw-semibold">PIN phòng:</span>
+                    <span class="badge bg-dark text-white">{{ roomId }}</span>
+                </div>
+
+                <div class="ms-2 d-flex align-items-center gap-2 flex-wrap">
+                    <button
+                        class="btn btn-outline-primary btn-sm"
+                        @click="openTargetDialog"
+                    >
+                        🎯 Target: {{ targetScore }}
+                    </button>
+                    <div class="form-check form-switch m-0">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="sugSwitch"
+                            v-model="suggestOn"
+                        />
+                        <label class="form-check-label" for="sugSwitch">
+                            Gợi ý
+                        </label>
+                    </div>
                 </div>
             </div>
-            <div class="flex-grow-1 text-center"></div>
-            <!-- Popup Winner -->
+
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <span class="fw-semibold">Số người:</span>
+                <span class="badge bg-primary text-white">
+                    {{ players.length }}
+                </span>
+                <span class="ms-2">WS:</span>
+                <span class="badge" :class="readyBadge">{{ ready }}</span>
+            </div>
+
             <div v-if="showWinner && winner" class="modal d-block text-center">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content p-4 rounded-4 shadow-lg">
@@ -45,23 +63,12 @@
                 </div>
             </div>
             <div v-if="showWinner" class="modal-backdrop show"></div>
-
-            <div
-                class="d-flex align-items-center gap-2 flex-wrap justify-content-end"
-            >
-                <span class="fw-semibold">Số người:</span>
-                <span class="badge bg-primary text-white">
-                    {{ players.length }}
-                </span>
-                <span class="ms-3">WS:</span>
-                <span class="badge" :class="readyBadge">{{ ready }}</span>
-            </div>
         </div>
-        <div class="row g-0 flex-grow-1">
-            <!-- danh sách users -->
-            <div
-                class="col-12 col-md-4 border-end d-flex flex-column"
-                style="min-height: 0"
+
+        <div class="row g-0 main-row" style="height: 100%">
+            <!-- Sidebar desktop -->
+            <aside
+                class="col-md-4 d-none d-md-flex flex-column border-end players-panel"
             >
                 <div
                     class="p-2 border-bottom d-flex align-items-center justify-content-between"
@@ -69,8 +76,7 @@
                     <h6 class="m-0">Người chơi</h6>
                     <span class="text-muted small">{{ players.length }}</span>
                 </div>
-
-                <div class="flex-grow-1 overflow-auto p-2">
+                <div class="list-wrap p-2">
                     <ul
                         class="list-group list-group-flush rounded-4 shadow-sm overflow-hidden"
                     >
@@ -80,19 +86,12 @@
                             class="list-group-item d-flex justify-content-between align-items-center py-2"
                         >
                             <span class="text-truncate me-2">{{ p.name }}</span>
-
-                            <!-- badge điểm; tô vàng nếu đang dẫn đầu -->
                             <span
                                 class="badge rounded-pill px-3 py-2"
                                 :class="
                                     scoreOf(p.id) === maxScore
                                         ? 'bg-warning text-dark'
                                         : 'bg-secondary-subtle text-secondary-emphasis'
-                                "
-                                :title="
-                                    scoreOf(p.id) === maxScore
-                                        ? 'Top score'
-                                        : ''
                                 "
                             >
                                 <span v-if="scoreOf(p.id) === maxScore">
@@ -103,52 +102,112 @@
                         </li>
                     </ul>
                 </div>
+            </aside>
+
+            <!-- Offcanvas mobile -->
+            <div
+                class="offcanvas offcanvas-start d-md-none"
+                tabindex="-1"
+                id="playersOffcanvas"
+                aria-labelledby="playersOffcanvasLabel"
+            >
+                <div class="offcanvas-header">
+                    <h5 id="playersOffcanvasLabel" class="offcanvas-title">
+                        Người chơi
+                    </h5>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="offcanvas"
+                        aria-label="Close"
+                    ></button>
+                </div>
+                <div class="offcanvas-body p-0 d-flex flex-column">
+                    <div
+                        class="p-2 border-top border-bottom d-flex align-items-center justify-content-between"
+                    >
+                        <span class="text-muted small">
+                            {{ players.length }} người
+                        </span>
+                    </div>
+                    <div class="flex-grow-1 overflow-auto p-2">
+                        <ul
+                            class="list-group list-group-flush rounded-4 shadow-sm overflow-hidden"
+                        >
+                            <li
+                                v-for="p in players"
+                                :key="p.id"
+                                class="list-group-item d-flex justify-content-between align-items-center py-2"
+                            >
+                                <span class="text-truncate me-2">
+                                    {{ p.name }}
+                                </span>
+                                <span
+                                    class="badge rounded-pill px-3 py-2"
+                                    :class="
+                                        scoreOf(p.id) === maxScore
+                                            ? 'bg-warning text-dark'
+                                            : 'bg-secondary-subtle text-secondary-emphasis'
+                                    "
+                                >
+                                    <span v-if="scoreOf(p.id) === maxScore">
+                                        🏆
+                                    </span>
+                                    {{ scoreOf(p.id) }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
-            <!-- header chat -->
-            <div
-                class="col-12 col-md-8 d-flex flex-column"
-                style="min-height: 0"
+            <!-- Khung chat -->
+            <section
+                class="col-12 col-md-8 chat-panel d-flex flex-column p-0"
+                style="height: 100%"
             >
-                <div class="d-flex align-items-center gap-2 p-2 border-bottom">
+                <!-- Điểm cá nhân -->
+                <div
+                    class="d-flex align-items-center gap-2 p-2 border-bottom bg-body-tertiary chat-subheader"
+                >
                     <span class="chip">
                         💎 Điểm của {{ myName }}: {{ scores[myId] || 0 }}
                     </span>
                 </div>
 
-                <!-- nội dung tin nhắn -->
-                <div class="flex-grow-1 overflow-auto p-3 flex-child-fix">
+                <!-- Nội dung tin nhắn: vùng cuộn duy nhất -->
+                <div
+                    class="p-3 chat-scroll flex-grow-1 chat-scroll-reverse"
+                    id="chat-scroll"
+                >
+                    <div class="scroll-anchor" aria-hidden="true"></div>
                     <div
-                        v-for="(m, i) in messages"
+                        v-for="(m, i) in [...messages].reverse()"
                         :key="i"
-                        class="mb-2"
-                        :class="m.from === myName ? 'text-end' : ''"
+                        class="msg-row"
+                        :class="m.from === myName ? 'me' : 'other'"
                     >
-                        <strong class="opacity-75">{{ m.from }}:</strong>
-                        <span class="ms-1">{{ m.text }}</span>
+                        <div class="msg-bubble">
+                            <div class="msg-text">{{ m.text }}</div>
+                        </div>
+                        <div
+                            class="msg-meta"
+                            :class="m.from === myName ? 'text-end' : ''"
+                        >
+                            <span class="name">{{ m.from }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- nhập nhắn tin -->
-                <div
-                    class="p-2 border-top position-relative sticky-bottom safe-bottom bg-body shadow-top composer"
-                    v-if="!showWinner"
-                >
+                <!-- Composer cố định đáy panel -->
+                <div class="composer border-top shadow-top" v-if="!showWinner">
                     <div class="position-relative">
-                        <!-- Gợi ý nổi LÊN TRÊN -->
+                        <!-- Gợi ý nổi -->
                         <div
                             v-if="
                                 suggestOn && (suggesting || suggestions.length)
                             "
-                            class="border rounded-3 bg-white shadow-sm overflow-hidden position-absolute w-100"
-                            style="
-                                bottom: 100%;
-                                left: 0;
-                                z-index: 1000;
-                                margin-bottom: 6px;
-                                max-height: 220px;
-                                overflow: auto;
-                            "
+                            class="suggest-box"
                         >
                             <div v-if="suggesting" class="p-2 small text-muted">
                                 Đang gợi ý...
@@ -175,13 +234,13 @@
                             </ul>
                         </div>
 
-                        <!-- Input + nút gửi -->
+                        <!-- Input + Gửi -->
                         <div class="input-group position-relative">
                             <input
                                 id="composer-input"
                                 v-model="text"
                                 type="text"
-                                class="form-control form-control-lg"
+                                class="form-control form-control-lg chat-input"
                                 placeholder="Nhập tin..."
                                 @keyup.enter="sendWord"
                                 autocomplete="off"
@@ -200,10 +259,10 @@
                         {{ messageError }}
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- nhập tên -->
+        <!-- Modal nhập tên -->
         <div v-if="showModal">
             <div class="modal d-block">
                 <div class="modal-dialog modal-dialog-centered">
@@ -737,18 +796,4 @@ watch(showWinner, (v) => {
 })
 </script>
 
-<style>
-.app-shell {
-    max-width: 1100px;
-    margin: auto;
-}
-.chip {
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: #f1f3f5;
-}
-.chip-success {
-    background: #e6fcf5;
-    color: #0ca678;
-}
-</style>
+<style src="./style.css"></style>
