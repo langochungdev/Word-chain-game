@@ -1,3 +1,25 @@
+/* Đảm bảo modal chiến thắng luôn nổi trên cùng */
+.modal.d-block {
+    z-index: 2000 !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: none !important;
+}
+.modal-backdrop.show {
+    z-index: 1999 !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.3) !important;
+}
 /* Khóa scroll toàn trang, chỉ cho khu chat cuộn */
 html,
 body {
