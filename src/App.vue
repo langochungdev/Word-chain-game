@@ -946,8 +946,13 @@ onMounted(() => {
     window.addEventListener('beforeunload', broadcastLeave)
 })
 
+let targetWatcherReady = false
 watch(targetScore, (newVal, oldVal) => {
     if (newVal === 0 && oldVal !== 0) {
+        if (!targetWatcherReady) {
+            targetWatcherReady = true
+            return
+        }
         // Reset local
         clearSuggestions()
         usedWords.clear()
