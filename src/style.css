@@ -620,3 +620,12 @@ button.btn,
     border-radius: 4px;
     white-space: nowrap; /* tránh xuống dòng */
 }
+.chat-scroll {
+    scroll-behavior: smooth;
+    overflow-anchor: auto;
+}
+
+.chat-scroll > .scroll-anchor {
+    height: 1px;
+    overflow-anchor: auto;
+}
