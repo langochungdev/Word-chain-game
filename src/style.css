@@ -389,6 +389,9 @@ button.btn,
         max-width: 100vw;
         font-size: 0.98rem;
     }
+    .hide-on-mobile {
+        display: none !important;
+    }
 }
 
 /* Win2K Classic Theme */
@@ -622,8 +625,7 @@ button.btn,
     z-index: 1000;
 }
 .chat-scroll {
-    scroll-behavior: smooth;
-    overflow-anchor: auto;
+    display: flex;
 }
 
 .chat-scroll > .scroll-anchor {

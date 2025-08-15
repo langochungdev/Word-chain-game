@@ -31,8 +31,12 @@
                     >
                         👥 Người chơi
                     </button>
-                    <span class="fw-semibold">PIN phòng:</span>
-                    <span class="badge bg-dark text-white">{{ roomId }}</span>
+                    <span class="hide-on-mobile">
+                        <span class="fw-semibold">PIN phòng:</span>
+                        <span class="badge bg-dark text-white">
+                            {{ roomId }}
+                        </span>
+                    </span>
                 </div>
 
                 <!-- Center: target -->
@@ -226,7 +230,7 @@
                     </span>
                 </div>
 
-                <!-- Nội dung tin nhắn: vùng cuộn duy nhất -->
+                <!-- Nội dung tin nhắn: vùng cuộn-->
                 <div
                     class="p-3 chat-scroll flex-grow-1 chat-scroll-reverse"
                     id="chat-scroll"
@@ -255,7 +259,9 @@
                             >
                                 {{ m.from }}
                             </span>
-                            <span v-if="isTopSender(m.from)">🏆</span>
+                            <span style="color: red" v-if="isTopSender(m.from)">
+                                🏆{{ maxScore }}🏆
+                            </span>
                             <span style="color: chartreuse">
                                 &nbsp;+{{ m.text.length }}
                             </span>
@@ -902,6 +908,16 @@ const isTopSender = (name) => {
 
 const sortedPlayers = computed(() => {
     return [...players].sort((a, b) => scoreOf(b.id) - scoreOf(a.id))
+})
+
+import { nextTick } from 'vue'
+
+watch(messages, async () => {
+    await nextTick()
+    const el = document.getElementById('chat-scroll')
+    if (el) {
+        el.scrollTop = el.scrollHeight
+    }
 })
 </script>
 
