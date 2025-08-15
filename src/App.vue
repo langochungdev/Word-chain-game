@@ -945,6 +945,27 @@ onMounted(() => {
     window.addEventListener('pagehide', handleExitEvent)
     window.addEventListener('beforeunload', broadcastLeave)
 })
+
+watch(targetScore, (newVal, oldVal) => {
+    if (newVal === 0 && oldVal !== 0) {
+        // Reset local
+        clearSuggestions()
+        usedWords.clear()
+        messages.splice(0, messages.length)
+        Object.keys(scores).forEach((k) => (scores[k] = 0))
+
+        // Gửi reset cho tất cả client nếu mình là người set
+        sendRoom({
+            type: 'reset',
+            targetScore: 0,
+            messages: [],
+            winner: null,
+        })
+
+        // Gửi toàn bộ điểm đã reset
+        sendRoom({ type: 'score', scores: { ...scores } })
+    }
+})
 </script>
 
 <style src="./style.css"></style>
