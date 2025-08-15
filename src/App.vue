@@ -1,30 +1,58 @@
 <template>
+    <!-- <div
+        style="
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            z-index: 9999;
+        "
+    >
+        <span class="ms-2">WS:</span>
+        <span class="badge" :class="readyBadge">{{ ready }}</span>
+    </div> -->
+
     <div class="container-fluid h-100dvh app-shell">
         <!-- Header -->
         <div class="chat-header border-bottom">
-            <div class="d-flex align-items-center gap-2">
-                <button
-                    class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
-                    type="button"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#playersOffcanvas"
-                    aria-controls="playersOffcanvas"
-                >
-                    👥 Người chơi
-                </button>
-
-                <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div
+                class="d-flex align-items-center justify-content-between gap-2 w-100"
+            >
+                <div class="d-flex align-items-center gap-2">
+                    <button
+                        class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#playersOffcanvas"
+                        aria-controls="playersOffcanvas"
+                    >
+                        👥 Người chơi
+                    </button>
                     <span class="fw-semibold">PIN phòng:</span>
                     <span class="badge bg-dark text-white">{{ roomId }}</span>
                 </div>
 
-                <div class="ms-2 d-flex align-items-center gap-2 flex-wrap">
-                    <button
-                        class="btn btn-outline-primary btn-sm"
+                <!-- Center: target -->
+                <div class="flex-grow-1 d-flex justify-content-center">
+                    <span
+                        class="badge bg-primary text-white rounded-pill px-3 py-2"
+                        style="
+                            font-size: 1rem;
+                            cursor: pointer;
+                            user-select: none;
+                        "
                         @click="openTargetDialog"
+                        title="Đặt target score"
                     >
                         🎯 Target: {{ targetScore }}
-                    </button>
+                    </span>
+                </div>
+
+                <!-- Right: suggest -->
+                <div class="d-flex align-items-center gap-2 ms-auto">
                     <div class="form-check form-switch m-0">
                         <input
                             class="form-check-input"
@@ -39,20 +67,14 @@
                 </div>
             </div>
 
-            <div class="d-flex align-items-center gap-2 ms-auto">
-                <span class="fw-semibold">Số người:</span>
-                <span class="badge bg-primary text-white">
-                    {{ players.length }}
-                </span>
-                <span class="ms-2">WS:</span>
-                <span class="badge" :class="readyBadge">{{ ready }}</span>
-            </div>
-
             <div v-if="showWinner && winner" class="modal d-block text-center">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content p-4 rounded-4 shadow-lg">
                         <h3 class="mb-3">🏁 Người chiến thắng!</h3>
-                        <h4>{{ winner.name }} ({{ winner.score }} điểm)</h4>
+                        <h4>
+                            <span class="neon-name">{{ winner.name }}</span>
+                            ({{ winner.score }} điểm)
+                        </h4>
                         <button
                             class="btn btn-primary mt-3"
                             @click="closeWinner"
@@ -69,38 +91,59 @@
             <!-- Sidebar desktop -->
             <aside
                 class="col-md-4 d-none d-md-flex flex-column border-end players-panel"
+                style="height: 100%"
             >
+                <!-- Header -->
                 <div
                     class="p-2 border-bottom d-flex align-items-center justify-content-between"
                 >
-                    <h6 class="m-0">Người chơi</h6>
-                    <span class="text-muted small">{{ players.length }}</span>
+                    <div class="d-flex align-items-center gap-2 ms-auto">
+                        <span class="fw-semibold">Số người:</span>
+                        <span class="badge bg-primary text-white">
+                            {{ players.length }}
+                        </span>
+                    </div>
                 </div>
-                <div class="list-wrap p-2">
-                    <ul
-                        class="list-group list-group-flush rounded-4 shadow-sm overflow-hidden"
-                    >
-                        <li
-                            v-for="p in players"
+
+                <!-- Danh sách -->
+                <div
+                    class="list-wrap p-2 overflow-auto"
+                    style="height: calc(100vh - 48px)"
+                >
+                    <div>
+                        <div
+                            v-for="p in sortedPlayers"
                             :key="p.id"
-                            class="list-group-item d-flex justify-content-between align-items-center py-2"
+                            class="card shadow-sm player-card"
                         >
-                            <span class="text-truncate me-2">{{ p.name }}</span>
-                            <span
-                                class="badge rounded-pill px-3 py-2"
-                                :class="
-                                    scoreOf(p.id) === maxScore
-                                        ? 'bg-warning text-dark'
-                                        : 'bg-secondary-subtle text-secondary-emphasis'
-                                "
+                            <div
+                                class="mb-2 card-body d-flex justify-content-between align-items-center"
                             >
-                                <span v-if="scoreOf(p.id) === maxScore">
-                                    🏆
+                                <span
+                                    :class="
+                                        p.id === myId
+                                            ? 'neon-name'
+                                            : 'neon-name-orange'
+                                    "
+                                >
+                                    {{ p.name }}
                                 </span>
-                                {{ scoreOf(p.id) }}
-                            </span>
-                        </li>
-                    </ul>
+                                <span
+                                    class="badge rounded-pill px-3 py-2"
+                                    :class="
+                                        scoreOf(p.id) === maxScore
+                                            ? 'bg-warning text-dark'
+                                            : 'bg-secondary-subtle text-secondary-emphasis'
+                                    "
+                                >
+                                    <span v-if="scoreOf(p.id) === maxScore">
+                                        🏆
+                                    </span>
+                                    {{ scoreOf(p.id) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
@@ -139,7 +182,13 @@
                                 :key="p.id"
                                 class="list-group-item d-flex justify-content-between align-items-center py-2"
                             >
-                                <span class="text-truncate me-2">
+                                <span
+                                    :class="
+                                        p.id === myId
+                                            ? 'neon-name'
+                                            : 'neon-name-orange'
+                                    "
+                                >
                                     {{ p.name }}
                                 </span>
                                 <span
@@ -171,7 +220,9 @@
                     class="d-flex align-items-center gap-2 p-2 border-bottom bg-body-tertiary chat-subheader"
                 >
                     <span class="chip">
-                        💎 Điểm của {{ myName }}: {{ scores[myId] || 0 }}
+                        💎 Điểm của
+                        <span class="neon-name">{{ myName }}</span>
+                        : {{ scores[myId] || 0 }}
                     </span>
                 </div>
 
@@ -194,7 +245,20 @@
                             class="msg-meta"
                             :class="m.from === myName ? 'text-end' : ''"
                         >
-                            <span class="name">{{ m.from }}</span>
+                            <span
+                                class="name"
+                                :class="
+                                    m.from === myName
+                                        ? 'neon-name'
+                                        : 'neon-name-orange'
+                                "
+                            >
+                                {{ m.from }}
+                            </span>
+                            <span v-if="isTopSender(m.from)">🏆</span>
+                            <span style="color: chartreuse">
+                                &nbsp;+{{ m.text.length }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -235,6 +299,12 @@
                         </div>
 
                         <!-- Input + Gửi -->
+                        <div v-if="targetScore === 0" class="error-float">
+                            Vui lòng nhập target score trước khi chơi.
+                        </div>
+                        <div v-if="messageError" class="error-float">
+                            {{ messageError }}
+                        </div>
                         <div class="input-group position-relative">
                             <input
                                 id="composer-input"
@@ -244,19 +314,17 @@
                                 placeholder="Nhập tin..."
                                 @keyup.enter="sendWord"
                                 autocomplete="off"
+                                :disabled="targetScore === 0"
                             />
                             <button
                                 class="btn btn-primary btn-lg"
                                 type="button"
                                 @click="sendWord"
+                                :disabled="targetScore === 0"
                             >
                                 Gửi
                             </button>
                         </div>
-                    </div>
-
-                    <div v-if="messageError" class="text-danger mt-1 small">
-                        {{ messageError }}
                     </div>
                 </div>
             </section>
@@ -296,7 +364,6 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-
 import SockJS from 'sockjs-client/dist/sockjs'
 import Stomp from 'stompjs'
 
@@ -307,12 +374,10 @@ const showModal = ref(true)
 const myId = Math.random().toString(36).slice(2, 8)
 const resetting = ref(false)
 const targetScore = ref(0)
-
 const players = reactive([])
 const messages = reactive([])
 const text = ref('')
 const messageError = ref('')
-
 const scores = reactive({})
 const ready = ref('disconnected')
 const showWinner = ref(false)
@@ -356,9 +421,9 @@ function connectWS() {
         ? 'https://word-chain-game-backend-production.up.railway.app/ws'
         : location.protocol === 'https:'
           ? 'https://word-chain-game-backend-production.up.railway.app/ws'
-          : 'http://localhost:8080/ws' // backend dev
+          : 'http://localhost:8080/ws'
 
-    const sock = new SockJS(WS_BASE) // KHÔNG dùng http khi trang đang https
+    const sock = new SockJS(WS_BASE)
     stompClient = Stomp.over(sock)
     stompClient.debug = null
     stompClient.connect(
@@ -366,19 +431,23 @@ function connectWS() {
         () => {
             ready.value = 'connected'
 
-            // CHAT MESSAGES: chỉ parse và push tin nhắn
             stompClient.subscribe(`/topic/room.${roomId.value}`, (frame) => {
                 const msg = JSON.parse(frame.body)
                 messages.push({ from: msg.senderId, text: msg.content })
+                usedWords.add(msg.content.trim().toLowerCase())
             })
 
-            // ROOM INFO: xử lý reset + sync state
             stompClient.subscribe(
                 `/topic/room-info.${roomId.value}`,
                 (frame) => {
                     const info = safeParse(frame.body)
                     if (!info) return
-
+                    // xử lý lỗi từ server (từ trùng)
+                    if (info.type === 'error' && info.origin === myId) {
+                        messageError.value = info.msg
+                        setTimeout(() => (messageError.value = ''), 1500)
+                        return
+                    }
                     // reset phải xử lý NGAY và cho tất cả client
                     if (info.type === 'reset') {
                         messages.splice(0, messages.length)
@@ -439,6 +508,37 @@ function connectWS() {
                     }
                 },
             )
+
+            stompClient.subscribe(
+                `/topic/room-history.${roomId.value}`,
+                (frame) => {
+                    const list = JSON.parse(frame.body)
+                    messages.splice(
+                        0,
+                        messages.length,
+                        ...list.map((m) => ({
+                            from: m.senderId,
+                            text: m.content,
+                        })),
+                    )
+                    list.forEach((m) => {
+                        if (m && m.content) {
+                            usedWords.add(m.content.trim().toLowerCase())
+                        }
+                    })
+                },
+            )
+            stompClient.subscribe('/user/queue/errors', (frame) => {
+                messageError.value = frame.body
+                setTimeout(() => (messageError.value = ''), 1500)
+            })
+
+            // sau khi kết nối thành công
+            stompClient.send(
+                '/app/chat.history',
+                {},
+                JSON.stringify({ roomId: roomId.value }),
+            )
         },
         () => (ready.value = 'disconnected'),
     )
@@ -483,14 +583,13 @@ function broadcastHello() {
     sendRoom({
         type: 'hello',
         players: [{ id: myId, name: myName.value }],
-        // targetScore: targetScore.value,
     })
 }
 function broadcastDelta() {
     sendRoom({
         type: 'delta',
         targetScore: targetScore.value,
-        // players: [{ id: myId, name: myName.value }],
+        players: [{ id: myId, name: myName.value }],
     })
 }
 function broadcastScoreDelta() {
@@ -499,7 +598,6 @@ function broadcastScoreDelta() {
 function broadcastLeave() {
     sendRoom({ type: 'leave', players: [{ id: myId }] })
 }
-
 function idxById(id) {
     return players.findIndex((p) => p.id === id)
 }
@@ -563,53 +661,37 @@ onMounted(() => {
     connectWS()
     window.addEventListener('beforeunload', broadcastLeave)
 })
-onBeforeUnmount(() => {
-    window.removeEventListener('beforeunload', broadcastLeave)
-    broadcastLeave()
-})
 
 // logic game
 const usedWords = new Set()
 
 async function isValidWord(word) {
-    try {
-        const res = await fetch(
-            `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
-        )
-        if (!res.ok) return false
-        const data = await res.json()
-        return Array.isArray(data) && data.length > 0
-    } catch {
-        return false
-    }
-}
-
-async function sendWord() {
-    const newWord = text.value.trim().toLowerCase()
+    const newWord = word.trim().toLowerCase()
 
     // Kiểm tra trống
     if (!newWord) {
         messageError.value = 'Nội dung trống'
-        setTimeout(() => (messageError.value = ''), 800)
-        return
+        return false
     }
-
+    // Kiểm tra chỉ gồm chữ cái
+    if (!/^[a-zA-Z]+$/.test(newWord)) {
+        messageError.value = 'Từ chỉ được chứa chữ cái (a-z)'
+        return false
+    }
     // Kiểm tra độ dài
     if (newWord.length < 2) {
         messageError.value = 'Từ phải có ít nhất 2 ký tự'
-        setTimeout(() => (messageError.value = ''), 1500)
-        return
+        return false
     }
 
-    // Lấy từ cuối cùng trước đó
+    // Lấy từ cuối cùng trước đó (tin nhắn người dùng thật)
     if (messages.length > 0) {
-        const lastMsg = [...messages].reverse().find((m) => m.from) // lấy message user thật
+        const lastMsg = [...messages].reverse().find((m) => m.from)
         if (lastMsg) {
             const lastWord = lastMsg.text.trim().toLowerCase()
             if (newWord[0] !== lastWord[lastWord.length - 1]) {
                 messageError.value = `Từ phải bắt đầu bằng "${lastWord[lastWord.length - 1]}"`
-                setTimeout(() => (messageError.value = ''), 1500)
-                return
+                return false
             }
         }
     }
@@ -617,35 +699,54 @@ async function sendWord() {
     // Kiểm tra từ đã dùng chưa
     if (usedWords.has(newWord)) {
         messageError.value = 'Từ này đã được sử dụng trước đó'
-        setTimeout(() => (messageError.value = ''), 1500)
-        return
+        return false
     }
 
     // Kiểm tra nghĩa từ qua API
-    const valid = await isValidWord(newWord)
-    if (!valid) {
-        messageError.value = 'Từ này không tồn tại trong từ điển'
+    try {
+        const res = await fetch(
+            `https://api.dictionaryapi.dev/api/v2/entries/en/${newWord}`,
+        )
+        if (!res.ok) {
+            messageError.value = 'Từ này không tồn tại trong từ điển'
+            return false
+        }
+        const data = await res.json()
+        if (!Array.isArray(data) || data.length === 0) {
+            messageError.value = 'Từ này không tồn tại trong từ điển'
+            return false
+        }
+    } catch {
+        messageError.value = 'Không thể kiểm tra từ'
+        return false
+    }
+
+    return true
+}
+async function sendWord() {
+    if (targetScore.value === 0) {
+        messageError.value = 'Vui lòng nhập target score trước khi chơi.'
         setTimeout(() => (messageError.value = ''), 1500)
         return
     }
+    const newWord = text.value.trim().toLowerCase()
 
-    // Nếu qua hết kiểm tra
+    const valid = await isValidWord(newWord)
+    if (!valid) {
+        setTimeout(() => (messageError.value = ''), 1500)
+        return
+    }
     usedWords.add(newWord)
     sendWSMessage(newWord)
 
-    // Cộng điểm theo số chữ cái
     const wordPoints = newWord.length
     scores[myId] = (scores[myId] || 0) + wordPoints
     broadcastScoreDelta()
 
-    // Kiểm tra thắng
     checkWinner()
-
-    // Clear input
     text.value = ''
 }
 
-// Hàm kiểm tra thắng
 function checkWinner() {
     if (resetting.value) return
     const ts = Number(targetScore.value || 0)
@@ -664,12 +765,12 @@ function checkWinner() {
             winner.value = { id: pid, name: wp.name, score: scoreNum }
 
             // dọn state local
-            clearSuggestions() // <<< xóa popup gợi ý
-            usedWords.clear() // <<< xóa lịch sử từ
+            clearSuggestions()
+            usedWords.clear()
             messages.splice(0, messages.length)
             targetScore.value = 0
 
-            // broadcast reset kèm winner cho TẤT CẢ client
+            Object.keys(scores).forEach((k) => (scores[k] = 0))
             sendRoom({
                 type: 'reset',
                 targetScore: 0,
@@ -678,7 +779,6 @@ function checkWinner() {
             })
 
             // reset điểm + broadcast
-            Object.keys(scores).forEach((k) => (scores[k] = 0))
             broadcastScoreDelta()
 
             // nhả cờ chống đúp
@@ -793,6 +893,15 @@ function closeWinner() {
 
 watch(showWinner, (v) => {
     if (v && winner.value) startFireworks(3000)
+})
+
+const isTopSender = (name) => {
+    const player = players.find((p) => p.name === name)
+    return player && scoreOf(player.id) === maxScore.value
+}
+
+const sortedPlayers = computed(() => {
+    return [...players].sort((a, b) => scoreOf(b.id) - scoreOf(a.id))
 })
 </script>
 

@@ -1,3 +1,88 @@
+/* Neon effect for other users (orange-red) */
+.neon-name-orange {
+    color: #ff7000;
+    text-shadow:
+        0 0 5px #ff7000,
+        0 0 10px #ff7000,
+        0 0 20px #ff7000,
+        0 0 40px #ff7000,
+        0 0 80px #ff7000;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: text-shadow 0.2s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .neon-name-orange {
+        color: #ff7000 !important;
+        text-shadow:
+            0 0 8px #ff7000,
+            0 0 16px #ff7000,
+            0 0 32px #ff7000,
+            0 0 64px #ff7000;
+    }
+}
+/* Fix neon effect not glowing naturally in user list */
+.players-panel .text-truncate.me-2 {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.players-panel .text-truncate.me-2 .neon-name {
+    display: inline-block;
+    padding: 0 2px;
+    background: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+/* Neon effect for usernames */
+.neon-name {
+    color: #00e0e1;
+    text-shadow:
+        0 0 5px #00e0e1,
+        0 0 10px #00e0e1,
+        0 0 20px #00e0e1,
+        0 0 40px #00e0e1,
+        0 0 80px #00e0e1;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: text-shadow 0.2s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .neon-name {
+        color: #00e0e1 !important;
+        text-shadow:
+            0 0 8px #00e0e1,
+            0 0 16px #00e0e1,
+            0 0 32px #00e0e1,
+            0 0 64px #00e0e1;
+    }
+}
+/* Gỡ màu nền mặc định của card để hiệu ứng blur card-body hiển thị đúng */
+.players-panel .card,
+.players-panel .card-body {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* Card body người chơi hiệu ứng blur mờ nền */
+.players-panel .card-body {
+    background: rgba(255, 255, 255, 0.32);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border-radius: 16px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    transition:
+        background 0.2s,
+        box-shadow 0.2s;
+}
+.players-panel .card-body:hover {
+    background: rgba(255, 255, 255, 0.44);
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.12);
+}
 /* Đảm bảo modal chiến thắng luôn nổi trên cùng */
 .modal.d-block {
     z-index: 2000 !important;
@@ -18,14 +103,19 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.3) !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+}
+
+::-webkit-scrollbar {
+    display: none;
 }
 /* Khóa scroll toàn trang, chỉ cho khu chat cuộn */
 html,
 body {
     height: 100%;
     overflow: hidden;
-    cursor: url('./assets/foo515.cur'), auto;
+    /* cursor: url('./assets/foo515.cur'), auto; */
+    -ms-overflow-style: none;
 }
 body {
     overscroll-behavior-y: contain;
@@ -45,7 +135,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    background-image: url('./assets/bg.png');
+    /* background-image: url('./assets/bg.png');/ */
 }
 
 /* Header cố định trong layout không cuộn trang */
@@ -507,11 +597,26 @@ button.btn,
     background: var(--bs-body-bg) url('./assets/bg.png') center center/cover
         no-repeat !important;
 }
-.chat-panel,
+/* .chat-panel, */
 .chat-scroll,
 .composer,
 .chat-header {
     background: rgba(255, 255, 255, 0.7) url('./assets/bg.png') center
         center/cover no-repeat !important;
     backdrop-filter: blur(2px);
+}
+
+.error-float {
+    position: absolute;
+    top: -26px;
+    left: 0;
+    display: inline-block;
+    padding: 2px 8px; /* đệm ngang 8px */
+    color: red;
+    font-size: 0.875rem;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 4px;
+    white-space: nowrap; /* tránh xuống dòng */
 }
