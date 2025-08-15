@@ -619,6 +619,7 @@ button.btn,
     backdrop-filter: blur(4px);
     border-radius: 4px;
     white-space: nowrap; /* tránh xuống dòng */
+    z-index: 1000;
 }
 .chat-scroll {
     scroll-behavior: smooth;
