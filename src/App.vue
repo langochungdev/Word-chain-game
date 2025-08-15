@@ -71,7 +71,11 @@
                 </div>
             </div>
 
-            <div v-if="showWinner && winner" class="modal d-block text-center">
+            <div
+                v-if="showWinner && winner"
+                id="showwiner"
+                class="modal d-block text-center"
+            >
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content p-4 rounded-4 shadow-lg">
                         <h3 class="mb-3">🏁 Người chiến thắng!</h3>
