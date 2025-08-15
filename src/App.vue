@@ -663,11 +663,6 @@ function openTargetDialog() {
     broadcastDelta()
 }
 
-onMounted(() => {
-    connectWS()
-    window.addEventListener('beforeunload', broadcastLeave)
-})
-
 // logic game
 const usedWords = new Set()
 
@@ -918,6 +913,33 @@ watch(messages, async () => {
     if (el) {
         el.scrollTop = el.scrollHeight
     }
+})
+
+// thêm biến và hàm mới
+let exitHandled = false
+
+function isAlone() {
+    return players.filter((p) => p && p.id).length === 1 && idxById(myId) >= 0
+}
+function resetRoomNow() {
+    sendRoom({ type: 'reset', targetScore: 0, messages: [], winner: null })
+}
+function handleExitOnce() {
+    if (exitHandled) return
+    exitHandled = true
+    if (stompClient && stompClient.connected) {
+        if (isAlone()) resetRoomNow()
+        broadcastLeave()
+    }
+}
+function handleExitEvent() {
+    handleExitOnce()
+}
+
+onMounted(() => {
+    connectWS()
+    window.addEventListener('pagehide', handleExitEvent)
+    window.addEventListener('beforeunload', broadcastLeave)
 })
 </script>
 
