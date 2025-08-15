@@ -771,13 +771,13 @@ function checkWinner() {
             messages.splice(0, messages.length)
             targetScore.value = 0
 
-            Object.keys(scores).forEach((k) => (scores[k] = 0))
             sendRoom({
                 type: 'reset',
                 targetScore: 0,
                 messages: [],
                 winner: { id: pid, name: wp.name, score: scoreNum },
             })
+            Object.keys(scores).forEach((k) => (scores[k] = 0))
 
             // reset điểm + broadcast
             broadcastScoreDelta()
