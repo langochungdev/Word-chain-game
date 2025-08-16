@@ -110,6 +110,9 @@
     display: none;
 }
 /* Khóa scroll toàn trang, chỉ cho khu chat cuộn */
+input, textarea {
+  cursor: url("./assets/foo515.cur"), auto !important;
+}
 html,
 body {
     height: 100%;
