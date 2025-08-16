@@ -114,7 +114,7 @@ html,
 body {
     height: 100%;
     overflow: hidden;
-     cursor: url('./assets/foo515.cur'), auto; 
+     cursor: url('./assets/foo515.cur'), auto !important;; 
     -ms-overflow-style: none;
 }
 body {
