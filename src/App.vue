@@ -428,9 +428,9 @@ function connectWS() {
     ready.value = 'connecting'
 
     const WS_BASE = import.meta.env.PROD
-        ? 'https://word-chain-game-backend-production.up.railway.app/ws'
+        ? 'https://site--word-chain-backend--lbs5fhkcswml.code.run/ws'
         : location.protocol === 'https:'
-          ? 'https://word-chain-game-backend-production.up.railway.app/ws'
+          ? 'https://site--word-chain-backend--lbs5fhkcswml.code.run/ws'
           : 'http://localhost:8080/ws'
 
     const sock = new SockJS(WS_BASE)
