@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Word Chain Auto Player",
+  "version": "1.0",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_title": "Auto Play Word Chain"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
