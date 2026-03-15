@@ -25,21 +25,21 @@ service cloud.firestore {
       return /databases/$(database)/documents/rooms/$(roomId);
     }
 
-    function memberRef(roomId, uid) {
-      return /databases/$(database)/documents/rooms/$(roomId)/members/$(uid);
-    }
-
     function isRoomHost(roomData) {
       return isSignedIn() && request.auth.uid == roomData.hostUid;
     }
 
-    function isRoomMember(roomId) {
-      return isSignedIn() && exists(memberRef(roomId, request.auth.uid));
-    }
-
     function isRoomMemberAfter(roomId) {
       return isSignedIn() &&
-        (existsAfter(memberRef(roomId, request.auth.uid)) || exists(memberRef(roomId, request.auth.uid)));
+        (
+          existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)) ||
+          exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
+        );
+    }
+
+    function roomHostUidForMemberWrite(roomId) {
+      let currentHostUid = exists(roomRef(roomId)) ? get(roomRef(roomId)).data.hostUid : '';
+      return existsAfter(roomRef(roomId)) ? getAfter(roomRef(roomId)).data.hostUid : currentHostUid;
     }
 
     function isWinnerShapeValid(winner) {
@@ -140,7 +140,7 @@ service cloud.firestore {
     }
 
     function isMemberShapeValid(data, roomId, uid) {
-      let room = get(roomRef(roomId)).data;
+      let roomHostUid = roomHostUidForMemberWrite(roomId);
       return data.keys().hasOnly(['displayName', 'role', 'score', 'isOnline', 'joinedAt', 'lastSeenAt']) &&
         isDisplayNameValid(data.displayName) &&
         isRoleValid(data.role) &&
@@ -148,7 +148,7 @@ service cloud.firestore {
         data.isOnline is bool &&
         data.joinedAt is timestamp &&
         data.lastSeenAt is timestamp &&
-        (data.role != 'host' || room.hostUid == uid);
+        (data.role != 'host' || roomHostUid == uid);
     }
 
     function isMessageShapeValid(data) {
@@ -208,7 +208,7 @@ service cloud.firestore {
           (
             request.resource.data.diff(resource.data).changedKeys().hasOnly(['role']) &&
             request.resource.data.role == 'host' &&
-            uid == get(roomRef(roomId)).data.hostUid
+            uid == roomHostUidForMemberWrite(roomId)
           )
         );
 

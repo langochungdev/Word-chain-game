@@ -133,40 +133,51 @@ export function useRooms() {
       const memberRef = doc(db, "rooms", targetSlug, "members", profileUid);
       const now = serverTimestamp();
 
-      await runTransaction(db, async (tx) => {
-        const roomDoc = await tx.get(roomRef);
-        if (roomDoc.exists()) {
-          throw new Error("MA_PHONG_DA_TON_TAI");
+      try {
+        await runTransaction(db, async (tx) => {
+          const roomDoc = await tx.get(roomRef);
+          if (roomDoc.exists()) {
+            throw new Error("MA_PHONG_DA_TON_TAI");
+          }
+
+          tx.set(roomRef, {
+            slug: targetSlug,
+            hostUid: profileUid,
+            hostName: cleanedName,
+            isPublic: Boolean(isPublic),
+            status: "open",
+            maxPlayers: DEFAULT_MAX_PLAYERS,
+            playerCount: 1,
+            createdAt: now,
+            updatedAt: now,
+            lastActivityAt: now,
+            gameState: {
+              targetScore: 0,
+              currentTurnUid: "",
+              lastWord: "",
+              winner: null,
+            },
+          });
+
+          tx.set(memberRef, {
+            displayName: cleanedName,
+            role: "host",
+            score: 0,
+            isOnline: true,
+            joinedAt: now,
+            lastSeenAt: now,
+          });
+        });
+      } catch (error) {
+        const firebaseError = error as { code?: string };
+        if (firebaseError?.code === "permission-denied") {
+          throw new Error("KHONG_DU_QUYEN_FIRESTORE");
         }
-
-        tx.set(roomRef, {
-          slug: targetSlug,
-          hostUid: profileUid,
-          hostName: cleanedName,
-          isPublic: Boolean(isPublic),
-          status: "open",
-          maxPlayers: DEFAULT_MAX_PLAYERS,
-          playerCount: 1,
-          createdAt: now,
-          updatedAt: now,
-          lastActivityAt: now,
-          gameState: {
-            targetScore: 0,
-            currentTurnUid: "",
-            lastWord: "",
-            winner: null,
-          },
-        });
-
-        tx.set(memberRef, {
-          displayName: cleanedName,
-          role: "host",
-          score: 0,
-          isOnline: true,
-          joinedAt: now,
-          lastSeenAt: now,
-        });
-      });
+        if (firebaseError?.code === "unauthenticated") {
+          throw new Error("CHUA_DANG_NHAP");
+        }
+        throw error;
+      }
 
       return targetSlug;
     };

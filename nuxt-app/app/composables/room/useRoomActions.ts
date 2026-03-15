@@ -176,15 +176,13 @@ export function useRoomActions({ db, roomSlug }) {
 
     if (leaveResult.wasHost) {
       const nextHost = remain.docs[0];
-      await Promise.all([
-        updateDoc(roomRef, {
-          hostUid: nextHost.id,
-          hostName: nextHost.data().displayName || "Host",
-          updatedAt: serverTimestamp(),
-          lastActivityAt: serverTimestamp(),
-        }),
-        setDoc(nextHost.ref, { role: "host" }, { merge: true }),
-      ]);
+      await updateDoc(roomRef, {
+        hostUid: nextHost.id,
+        hostName: nextHost.data().displayName || "Host",
+        updatedAt: serverTimestamp(),
+        lastActivityAt: serverTimestamp(),
+      });
+      await setDoc(nextHost.ref, { role: "host" }, { merge: true });
     }
   }
 

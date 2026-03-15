@@ -6,7 +6,7 @@ import {
   type FirebaseOptions,
 } from "firebase/app";
 import type { Auth } from "firebase/auth";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import type { Firestore } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
 
@@ -42,14 +42,6 @@ export default defineNuxtPlugin(async () => {
     firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(firebaseApp);
     db = getFirestore(firebaseApp);
-
-    if (!auth.currentUser) {
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        console.error("Firebase anonymous sign-in failed", error);
-      }
-    }
   }
 
   return {

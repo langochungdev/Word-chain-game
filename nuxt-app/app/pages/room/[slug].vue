@@ -20,6 +20,9 @@
     <div v-if="actionError" class="alert alert-warning" role="alert">
       {{ actionError }}
     </div>
+    <div v-if="profileError" class="alert alert-danger" role="alert">
+      {{ profileError }}
+    </div>
     <div v-if="presenceError" class="alert alert-danger" role="alert">
       {{ presenceError }}
     </div>
@@ -49,7 +52,7 @@
     </div>
 
     <NameGateModal
-      :visible="profileReady && !hasName"
+      :visible="profileReady && !hasName && !profileError"
       title="Nhap ten de vao phong"
       v-model="nameInput"
       :error="nameError"
@@ -85,8 +88,15 @@ const normalizedSlug = String(route.params.slug || "")
   .slice(0, 4);
 const roomSlug = normalizedSlug.length === 4 ? normalizedSlug : "0000";
 
-const { uid, name, hasName, profileReady, bootstrapProfile, saveName } =
-  useProfile();
+const {
+  uid,
+  name,
+  hasName,
+  profileReady,
+  profileError,
+  bootstrapProfile,
+  saveName,
+} = useProfile();
 const {
   room,
   members,
@@ -114,6 +124,14 @@ const orderedMessages = computed(() => [...messages.value].reverse());
 const isHost = computed(() => roomState.value?.hostUid === uid.value);
 
 function mapError(error: unknown) {
+  const firebaseError = error as { code?: string; message?: string };
+  if (firebaseError?.code === "permission-denied") {
+    return "Khong du quyen thao tac Firestore. Kiem tra lai firestore.rules.";
+  }
+  if (firebaseError?.code === "unauthenticated") {
+    return "Ban chua dang nhap Firebase Auth.";
+  }
+
   if (!(error instanceof Error)) return "Co loi khong xac dinh";
   if (error.message === "ROOM_NOT_FOUND") return "Phong khong ton tai";
   if (error.message === "ROOM_NOT_OPEN") return "Phong da dong";

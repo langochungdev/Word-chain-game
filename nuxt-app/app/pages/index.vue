@@ -43,7 +43,7 @@
     </div>
 
     <NameGateModal
-      :visible="profileReady && !hasName"
+      :visible="profileReady && !hasName && !profileError"
       title="Nhap ten truoc khi tiep tuc"
       v-model="nameInput"
       :error="nameError"
@@ -107,6 +107,10 @@ function mapError(error: unknown) {
   if (error.message === "MA_PHONG_DA_TON_TAI") return "Ma phong da ton tai";
   if (error.message === "KHONG_THE_TAO_PHONG")
     return "Khong the tao phong luc nay";
+  if (error.message === "KHONG_DU_QUYEN_FIRESTORE")
+    return "Khong du quyen ghi Firestore. Kiem tra lai firestore.rules da deploy dung project.";
+  if (error.message === "CHUA_DANG_NHAP")
+    return "Chua xac thuc Firebase Auth. Kiem tra Anonymous Auth da bat.";
   if (error.message === "TEN_KHONG_HOP_LE") return "Ten phai tu 2 den 24 ky tu";
   if (error.message === "USER_KHONG_HOP_LE")
     return "Khong tim thay danh tinh nguoi dung";
