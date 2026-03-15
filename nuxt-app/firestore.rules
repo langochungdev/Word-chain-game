@@ -1,0 +1,233 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isRoomIdValid(roomId) {
+      return roomId.matches('^[0-9]{4}$');
+    }
+
+    function isDisplayNameValid(name) {
+      return name is string && name.size() >= 2 && name.size() <= 24;
+    }
+
+    function isRoomStatusValid(status) {
+      return status == 'open' || status == 'playing' || status == 'closed';
+    }
+
+    function isRoleValid(role) {
+      return role == 'host' || role == 'player';
+    }
+
+    function roomRef(roomId) {
+      return /databases/$(database)/documents/rooms/$(roomId);
+    }
+
+    function memberRef(roomId, uid) {
+      return /databases/$(database)/documents/rooms/$(roomId)/members/$(uid);
+    }
+
+    function isRoomHost(roomData) {
+      return isSignedIn() && request.auth.uid == roomData.hostUid;
+    }
+
+    function isRoomMember(roomId) {
+      return isSignedIn() && exists(memberRef(roomId, request.auth.uid));
+    }
+
+    function isRoomMemberAfter(roomId) {
+      return isSignedIn() &&
+        (existsAfter(memberRef(roomId, request.auth.uid)) || exists(memberRef(roomId, request.auth.uid)));
+    }
+
+    function isWinnerShapeValid(winner) {
+      return winner == null || (
+        winner is map &&
+        winner.keys().hasOnly(['uid', 'name', 'score']) &&
+        winner.uid is string &&
+        winner.name is string &&
+        winner.score is int
+      );
+    }
+
+    function isRoomShapeValid(data, roomId) {
+      return data.keys().hasOnly([
+          'slug',
+          'hostUid',
+          'hostName',
+          'isPublic',
+          'status',
+          'maxPlayers',
+          'playerCount',
+          'createdAt',
+          'updatedAt',
+          'lastActivityAt',
+          'gameState'
+        ]) &&
+        data.slug == roomId &&
+        data.hostUid is string &&
+        isDisplayNameValid(data.hostName) &&
+        data.isPublic is bool &&
+        isRoomStatusValid(data.status) &&
+        data.maxPlayers is int &&
+        data.maxPlayers >= 1 &&
+        data.maxPlayers <= 20 &&
+        data.playerCount is int &&
+        data.playerCount >= 0 &&
+        data.playerCount <= data.maxPlayers &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.lastActivityAt is timestamp &&
+        data.gameState is map &&
+        data.gameState.keys().hasOnly(['targetScore', 'currentTurnUid', 'lastWord', 'winner']) &&
+        data.gameState.targetScore is int &&
+        data.gameState.targetScore >= 0 &&
+        data.gameState.currentTurnUid is string &&
+        data.gameState.lastWord is string &&
+        isWinnerShapeValid(data.gameState.winner);
+    }
+
+    function isInitialRoomState(roomId) {
+      return isRoomShapeValid(request.resource.data, roomId) &&
+        request.resource.data.hostUid == request.auth.uid &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.playerCount == 1 &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.lastActivityAt == request.time &&
+        request.resource.data.gameState.targetScore == 0 &&
+        request.resource.data.gameState.currentTurnUid == '' &&
+        request.resource.data.gameState.lastWord == '' &&
+        request.resource.data.gameState.winner == null;
+    }
+
+    function roomCoreTimingValid() {
+      let changed = request.resource.data.diff(resource.data).changedKeys();
+      return (!changed.hasAny(['updatedAt']) || request.resource.data.updatedAt == request.time) &&
+        (!changed.hasAny(['lastActivityAt']) || request.resource.data.lastActivityAt == request.time);
+    }
+
+    function roomHostFieldMutationValid() {
+      let changed = request.resource.data.diff(resource.data).changedKeys();
+      return (!changed.hasAny(['hostUid', 'hostName', 'isPublic', 'maxPlayers']) || isRoomHost(resource.data));
+    }
+
+    function roomStatusMutationValid() {
+      let changed = request.resource.data.diff(resource.data).changedKeys();
+      return !changed.hasAny(['status']) ||
+        request.resource.data.status == resource.data.status ||
+        request.resource.data.status == 'playing' ||
+        isRoomHost(resource.data);
+    }
+
+    function roomGameStateMutationValid(roomId) {
+      return (request.resource.data.gameState.targetScore == resource.data.gameState.targetScore || isRoomHost(resource.data)) &&
+        (request.resource.data.gameState.currentTurnUid == resource.data.gameState.currentTurnUid ||
+          request.resource.data.gameState.currentTurnUid == request.auth.uid) &&
+        (request.resource.data.gameState.lastWord == resource.data.gameState.lastWord || isRoomMemberAfter(roomId));
+    }
+
+    function canCloseStaleRoom() {
+      let changed = request.resource.data.diff(resource.data).changedKeys();
+      return changed.hasOnly(['status', 'isPublic', 'updatedAt']) &&
+        request.resource.data.status == 'closed' &&
+        request.resource.data.isPublic == false &&
+        request.resource.data.updatedAt == request.time &&
+        resource.data.status == 'open' &&
+        resource.data.lastActivityAt < request.time - duration.value(6, 'h');
+    }
+
+    function isMemberShapeValid(data, roomId, uid) {
+      let room = get(roomRef(roomId)).data;
+      return data.keys().hasOnly(['displayName', 'role', 'score', 'isOnline', 'joinedAt', 'lastSeenAt']) &&
+        isDisplayNameValid(data.displayName) &&
+        isRoleValid(data.role) &&
+        data.score is int &&
+        data.isOnline is bool &&
+        data.joinedAt is timestamp &&
+        data.lastSeenAt is timestamp &&
+        (data.role != 'host' || room.hostUid == uid);
+    }
+
+    function isMessageShapeValid(data) {
+      return data.keys().hasOnly(['uid', 'displayName', 'text', 'points', 'createdAt']) &&
+        data.uid == request.auth.uid &&
+        isDisplayNameValid(data.displayName) &&
+        data.text is string &&
+        data.text.size() > 0 &&
+        data.points is int &&
+        data.points == data.text.size() &&
+        data.createdAt == request.time;
+    }
+
+    match /rooms/{roomId} {
+      allow get: if isSignedIn() && isRoomIdValid(roomId);
+
+      allow list: if isSignedIn() &&
+        resource.data.isPublic == true &&
+        resource.data.status == 'open';
+
+      allow create: if isSignedIn() &&
+        isRoomIdValid(roomId) &&
+        isInitialRoomState(roomId);
+
+      allow update: if isSignedIn() &&
+        isRoomIdValid(roomId) &&
+        isRoomShapeValid(request.resource.data, roomId) &&
+        (
+          (
+            isRoomMemberAfter(roomId) &&
+            roomCoreTimingValid() &&
+            roomHostFieldMutationValid() &&
+            roomStatusMutationValid() &&
+            roomGameStateMutationValid(roomId)
+          ) ||
+          canCloseStaleRoom()
+        );
+
+      allow delete: if false;
+    }
+
+    match /rooms/{roomId}/members/{uid} {
+      allow read: if isSignedIn() && isRoomIdValid(roomId);
+
+      allow create: if isSignedIn() &&
+        isRoomIdValid(roomId) &&
+        request.auth.uid == uid &&
+        isMemberShapeValid(request.resource.data, roomId, uid);
+
+      allow update: if isSignedIn() &&
+        isRoomIdValid(roomId) &&
+        (
+          (
+            request.auth.uid == uid &&
+            isMemberShapeValid(request.resource.data, roomId, uid)
+          ) ||
+          (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['role']) &&
+            request.resource.data.role == 'host' &&
+            uid == get(roomRef(roomId)).data.hostUid
+          )
+        );
+
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /rooms/{roomId}/messages/{messageId} {
+      allow read: if isSignedIn() && isRoomIdValid(roomId);
+
+      allow create: if isSignedIn() &&
+        isRoomIdValid(roomId) &&
+        isRoomMemberAfter(roomId) &&
+        isMessageShapeValid(request.resource.data);
+
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
