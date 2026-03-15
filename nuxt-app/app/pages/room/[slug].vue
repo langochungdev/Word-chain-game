@@ -197,7 +197,7 @@ const sortedPlayers = computed(() =>
   [...players.value].sort((a, b) => scoreOf(b.id) - scoreOf(a.id)),
 );
 const chatMessages = computed(() =>
-  roundMessages.value.map((item) => ({
+  [...roundMessages.value].reverse().map((item) => ({
     from: item.displayName,
     text: item.text,
   })),

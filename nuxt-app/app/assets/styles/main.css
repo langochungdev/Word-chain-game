@@ -201,13 +201,10 @@ body {
     overflow-anchor: none;
     min-height: 0;
     flex-grow: 1;
-    display: flex;
-    flex-direction: column-reverse;
 }
 
 .chat-scroll-reverse {
-    display: flex;
-    flex-direction: column-reverse;
+    display: block;
 }
 
 .scroll-anchor {
@@ -612,7 +609,7 @@ button.btn,
 }
 
 .chat-scroll {
-    display: flex;
+    display: block;
 }
 
 .chat-scroll>.scroll-anchor {

@@ -14,11 +14,11 @@
 
     <div
       id="chat-scroll"
-      class="p-3 chat-scroll flex-grow-1 chat-scroll-reverse"
+      ref="chatScrollRef"
+      class="p-3 chat-scroll flex-grow-1"
     >
-      <div class="scroll-anchor" aria-hidden="true"></div>
       <div
-        v-for="(m, i) in [...messages].reverse()"
+        v-for="(m, i) in messages"
         :key="i"
         class="msg-row"
         :class="m.from === myName ? 'me' : 'other'"
@@ -83,7 +83,7 @@
             placeholder="Nhập tin..."
             autocomplete="off"
             :disabled="targetScore === 0"
-            @keyup.enter="$emit('send-word')"
+            @keydown.enter.prevent="$emit('send-word')"
           />
           <button
             class="btn btn-primary btn-lg"
@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 type ChatMessage = {
   from: string;
@@ -136,5 +136,24 @@ const emit = defineEmits<{
 const textModel = computed({
   get: () => props.text,
   set: (value: string) => emit("update:text", value),
+});
+
+const chatScrollRef = ref<HTMLElement | null>(null);
+
+async function scrollToBottom() {
+  await nextTick();
+  if (!chatScrollRef.value) return;
+  chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight;
+}
+
+watch(
+  () => props.messages.length,
+  () => {
+    scrollToBottom();
+  },
+);
+
+onMounted(() => {
+  scrollToBottom();
 });
 </script>
