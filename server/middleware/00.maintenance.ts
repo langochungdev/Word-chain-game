@@ -31,7 +31,11 @@ export default defineEventHandler((event) => {
   }
 
   const config = useRuntimeConfig(event);
-  const modeOn = normalizeFlag(config.maintenanceMode);
+  const modeOn = normalizeFlag(
+    process.env.MAINTENANCE_MODE ??
+      process.env.NUXT_MAINTENANCE_MODE ??
+      config.maintenanceMode,
+  );
 
   const hasFirebaseConfig = Boolean(
     config.public.firebaseApiKey &&
@@ -47,7 +51,12 @@ export default defineEventHandler((event) => {
     return;
   }
 
-  const bypassToken = String(config.maintenanceBypassToken || "").trim();
+  const bypassToken = String(
+    process.env.MAINTENANCE_BYPASS_TOKEN ??
+      process.env.NUXT_MAINTENANCE_BYPASS_TOKEN ??
+      config.maintenanceBypassToken ??
+      "",
+  ).trim();
   const query = getQuery(event);
   const bypassFromQuery = typeof query.bypass === "string" ? query.bypass : "";
 
