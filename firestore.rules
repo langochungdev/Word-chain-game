@@ -138,6 +138,28 @@ service cloud.firestore {
         (request.resource.data.gameState.lastWord == resource.data.gameState.lastWord || isRoomMemberAfter(roomId));
     }
 
+    function roomMemberGeneralMutationValid(roomId) {
+      return isRoomMemberAfter(roomId) &&
+        roomCoreTimingValid() &&
+        roomHostFieldMutationValid() &&
+        roomStatusMutationValid() &&
+        roomGameStateMutationValid(roomId);
+    }
+
+    function isMemberRoundReset(roomId) {
+      let changed = request.resource.data.diff(resource.data).changedKeys();
+      return isRoomMemberAfter(roomId) &&
+        roomCoreTimingValid() &&
+        roomHostFieldMutationValid() &&
+        changed.hasOnly(['status', 'updatedAt', 'lastActivityAt', 'gameState']) &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.gameState.targetScore == 0 &&
+        request.resource.data.gameState.currentTurnUid == '' &&
+        request.resource.data.gameState.lastWord == '' &&
+        request.resource.data.gameState.roundId == resource.data.gameState.roundId &&
+        request.resource.data.gameState.winner == null;
+    }
+
     function canCloseStaleRoom() {
       let changed = request.resource.data.diff(resource.data).changedKeys();
       return changed.hasOnly(['status', 'isPublic', 'updatedAt']) &&
@@ -158,6 +180,21 @@ service cloud.firestore {
         data.joinedAt is timestamp &&
         data.lastSeenAt is timestamp &&
         (data.role != 'host' || roomHostUid == uid);
+    }
+
+    function canMemberZeroScoreDuringReset(roomId) {
+      return isRoomMemberAfter(roomId) &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['score']) &&
+        request.resource.data.score is int &&
+        request.resource.data.score == 0 &&
+        existsAfter(roomRef(roomId)) &&
+        getAfter(roomRef(roomId)).data.updatedAt == request.time &&
+        getAfter(roomRef(roomId)).data.lastActivityAt == request.time &&
+        getAfter(roomRef(roomId)).data.status == 'open' &&
+        getAfter(roomRef(roomId)).data.gameState.targetScore == 0 &&
+        getAfter(roomRef(roomId)).data.gameState.currentTurnUid == '' &&
+        getAfter(roomRef(roomId)).data.gameState.lastWord == '' &&
+        getAfter(roomRef(roomId)).data.gameState.winner == null;
     }
 
     function isMessageShapeValid(data) {
@@ -188,13 +225,8 @@ service cloud.firestore {
         isRoomIdValid(roomId) &&
         isRoomShapeValid(request.resource.data, roomId) &&
         (
-          (
-            isRoomMemberAfter(roomId) &&
-            roomCoreTimingValid() &&
-            roomHostFieldMutationValid() &&
-            roomStatusMutationValid() &&
-            roomGameStateMutationValid(roomId)
-          ) ||
+          roomMemberGeneralMutationValid(roomId) ||
+          isMemberRoundReset(roomId) ||
           canCloseStaleRoom()
         );
 
@@ -226,7 +258,8 @@ service cloud.firestore {
             request.resource.data.diff(resource.data).changedKeys().hasOnly(['score']) &&
             request.resource.data.score is int &&
             request.resource.data.score >= 0
-          )
+          ) ||
+          canMemberZeroScoreDuringReset(roomId)
         );
 
       allow delete: if isSignedIn() && request.auth.uid == uid;

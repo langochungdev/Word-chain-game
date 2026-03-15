@@ -8,6 +8,7 @@
       :winner="winner"
       @update:suggestOn="suggestOn = $event"
       @open-target="openTargetDialog"
+      @reset-round="resetGameRound"
       @close-winner="closeWinner"
     />
 
@@ -30,7 +31,7 @@
       <WordChainChatSection
         :my-name="myName"
         :my-id="myId"
-        :scores="scoresMap"
+        :scores="displayScoresMap"
         :messages="chatMessages"
         :max-score="maxScore"
         :show-winner="showWinner"
@@ -71,6 +72,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { usePresence } from "~/composables/usePresence";
 import { useProfile } from "~/composables/useProfile";
 import { useRoom } from "~/composables/useRoom";
+import { useLocalDictionary } from "~/composables/word-chain/useLocalDictionary";
 import { useWordChainSuggestions } from "~/composables/word-chain/useWordChainSuggestions";
 
 type RoomState = {
@@ -112,6 +114,14 @@ type WinnerState = {
   name: string;
   score: number;
 } | null;
+
+type OptimisticMessageState = {
+  uid: string;
+  displayName: string;
+  text: string;
+  roundId: number;
+  points: number;
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -155,7 +165,10 @@ const suggesting = ref(false);
 const sendingWord = ref(false);
 const showWinner = ref(false);
 const winner = ref<WinnerState>(null);
+const optimisticMessage = ref<OptimisticMessageState | null>(null);
 let unsubscribeRoom: (() => void) | null = null;
+
+const { has: hasDictionaryWord } = useLocalDictionary();
 
 const roomState = computed(() => room.value as RoomState | null);
 const memberList = computed(() => members.value as MemberState[]);
@@ -176,8 +189,18 @@ const scoresMap = computed<Record<string, number>>(() => {
   }
   return next;
 });
+const displayScoresMap = computed<Record<string, number>>(() => {
+  const next = { ...scoresMap.value };
+  const pending = optimisticMessage.value;
+
+  if (pending?.uid) {
+    next[pending.uid] = Number(next[pending.uid] || 0) + pending.points;
+  }
+
+  return next;
+});
 const maxScore = computed(() => {
-  const values = Object.values(scoresMap.value).map(Number);
+  const values = Object.values(displayScoresMap.value).map(Number);
   return values.length ? Math.max(...values) : 0;
 });
 const targetScore = computed(() =>
@@ -196,12 +219,32 @@ const roundMessages = computed(() =>
 const sortedPlayers = computed(() =>
   [...players.value].sort((a, b) => scoreOf(b.id) - scoreOf(a.id)),
 );
-const chatMessages = computed(() =>
-  [...roundMessages.value].reverse().map((item) => ({
+const chatMessages = computed(() => {
+  const base = [...roundMessages.value].reverse().map((item) => ({
     from: item.displayName,
     text: item.text,
-  })),
-);
+  }));
+
+  const pending = optimisticMessage.value;
+  if (!pending) return base;
+
+  const committed = roundMessages.value.some(
+    (item) =>
+      item.uid === pending.uid &&
+      normalizeWord(item.text) === pending.text &&
+      Number(item.roundId || 0) === pending.roundId,
+  );
+
+  if (committed) return base;
+
+  return [
+    ...base,
+    {
+      from: pending.displayName,
+      text: pending.text,
+    },
+  ];
+});
 const usedWords = computed(() => {
   const set = new Set<string>();
   for (const item of roundMessages.value) {
@@ -234,7 +277,7 @@ const { pickSuggestion, stopSuggestions } = useWordChainSuggestions({
 });
 
 function scoreOf(id: string) {
-  return Number(scoresMap.value[id] || 0);
+  return Number(displayScoresMap.value[id] || 0);
 }
 
 function isTopSender(displayName: string) {
@@ -260,7 +303,7 @@ function mapError(error: unknown) {
     return "Vui lòng nhập target score trước khi chơi.";
   if (error.message === "ROUND_NOT_STARTED") return "Vong choi chua bat dau.";
   if (error.message === "ROUND_FINISHED")
-    return "Vong choi da ket thuc. Host hay dong winner de reset.";
+    return "Vong choi da ket thuc. Bam Reset de choi lai.";
   if (error.message === "MESSAGE_EMPTY") return "Nội dung trống";
   if (error.message === "WORD_EMPTY") return "Nội dung trống";
   if (error.message === "WORD_TOO_SHORT") return "Từ phải có ít nhất 2 ký tự";
@@ -278,8 +321,6 @@ function mapError(error: unknown) {
   }
   if (error.message === "DICTIONARY_NOT_FOUND")
     return "Từ này không tồn tại trong từ điển";
-  if (error.message === "DICTIONARY_UNAVAILABLE")
-    return "Không thể kiểm tra từ";
   return error.message;
 }
 
@@ -290,45 +331,7 @@ function normalizeWord(raw: string) {
     .replace(/\s+/g, " ");
 }
 
-async function requestDictionary(word: string, timeoutMs: number) {
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
-      { signal: controller.signal },
-    );
-
-    if (response.status === 404) return "not-found" as const;
-    if (!response.ok) return "retry" as const;
-
-    const payload = (await response.json()) as unknown;
-    if (!Array.isArray(payload) || payload.length === 0) {
-      return "not-found" as const;
-    }
-
-    return "ok" as const;
-  } catch {
-    return "retry" as const;
-  } finally {
-    window.clearTimeout(timer);
-  }
-}
-
-async function validateDictionaryWord(word: string) {
-  const firstAttempt = await requestDictionary(word, 2500);
-  if (firstAttempt === "ok") return;
-  if (firstAttempt === "not-found") throw new Error("DICTIONARY_NOT_FOUND");
-
-  const secondAttempt = await requestDictionary(word, 2500);
-  if (secondAttempt === "ok") return;
-  if (secondAttempt === "not-found") throw new Error("DICTIONARY_NOT_FOUND");
-
-  throw new Error("DICTIONARY_UNAVAILABLE");
-}
-
-async function validateWordForSend(rawInput: string) {
+function validateWordForSend(rawInput: string) {
   const normalized = normalizeWord(rawInput);
   if (!normalized) throw new Error("WORD_EMPTY");
   if (!/^[a-z]+$/.test(normalized)) throw new Error("WORD_INVALID_CHAR");
@@ -342,7 +345,10 @@ async function validateWordForSend(rawInput: string) {
 
   if (usedWords.value.has(normalized)) throw new Error("WORD_DUPLICATE");
 
-  await validateDictionaryWord(normalized);
+  if (!hasDictionaryWord(normalized)) {
+    throw new Error("DICTIONARY_NOT_FOUND");
+  }
+
   return normalized;
 }
 
@@ -379,12 +385,16 @@ async function submitName() {
 
 async function sendChat() {
   if (sendingWord.value) return;
+  if (optimisticMessage.value) {
+    pushActionError("Dang dong bo tin nhan truoc, vui long thu lai.");
+    return;
+  }
   if (targetScore.value === 0) {
     pushActionError("Vui lòng nhập target score trước khi chơi.");
     return;
   }
   if (roomState.value?.gameState?.winner) {
-    pushActionError("Vong choi da ket thuc. Host hay dong winner de reset.");
+    pushActionError("Vong choi da ket thuc. Bam Reset de choi lai.");
     return;
   }
   if (!uid.value || !name.value) {
@@ -396,10 +406,18 @@ async function sendChat() {
   actionError.value = "";
 
   try {
-    const normalizedWord = await validateWordForSend(messageInput.value);
-    await sendMessage({ uid: uid.value, name: name.value }, normalizedWord);
+    const normalizedWord = validateWordForSend(messageInput.value);
+    optimisticMessage.value = {
+      uid: uid.value,
+      displayName: name.value,
+      text: normalizedWord,
+      roundId: currentRoundId.value,
+      points: normalizedWord.length,
+    };
     messageInput.value = "";
+    await sendMessage({ uid: uid.value, name: name.value }, normalizedWord);
   } catch (error) {
+    optimisticMessage.value = null;
     pushActionError(mapError(error));
   } finally {
     sendingWord.value = false;
@@ -419,6 +437,24 @@ async function openTargetDialog() {
   actionError.value = "";
   try {
     await setTargetScore(uid.value, Math.floor(parsed));
+  } catch (error) {
+    pushActionError(mapError(error));
+  }
+}
+
+async function resetGameRound() {
+  if (!uid.value) {
+    pushActionError("Khong the khoi tao profile tu Firebase Auth.");
+    return;
+  }
+
+  actionError.value = "";
+  optimisticMessage.value = null;
+  showWinner.value = false;
+  winner.value = null;
+
+  try {
+    await resetRound(uid.value);
   } catch (error) {
     pushActionError(mapError(error));
   }
@@ -455,6 +491,22 @@ watch(
   },
   { immediate: true },
 );
+
+watch(roundMessages, (items) => {
+  const pending = optimisticMessage.value;
+  if (!pending) return;
+
+  const committed = items.some(
+    (item) =>
+      item.uid === pending.uid &&
+      normalizeWord(item.text) === pending.text &&
+      Number(item.roundId || 0) === pending.roundId,
+  );
+
+  if (committed) {
+    optimisticMessage.value = null;
+  }
+});
 
 onMounted(async () => {
   if (normalizedSlug.length !== 4) {

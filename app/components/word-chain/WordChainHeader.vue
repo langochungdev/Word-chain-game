@@ -18,14 +18,22 @@
       </div>
 
       <div class="flex-grow-1 d-flex justify-content-center">
-        <span
-          class="badge bg-primary text-white rounded-pill px-3 py-2"
-          style="font-size: 1rem; cursor: pointer; user-select: none"
-          title="Đặt target score"
-          @click="$emit('open-target')"
-        >
-          🎯 Target: {{ targetScore }}
-        </span>
+        <div class="d-flex align-items-center gap-2 target-actions">
+          <span
+            class="badge bg-primary text-white rounded-pill px-3 py-2 target-badge"
+            title="Đặt target score"
+            @click="$emit('open-target')"
+          >
+            🎯 Target: {{ targetScore }}
+          </span>
+          <button
+            type="button"
+            class="btn btn-sm target-reset-btn"
+            @click="$emit('reset-round')"
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       <div class="d-flex align-items-center gap-2 ms-auto">
@@ -50,9 +58,7 @@
         <div class="modal-content p-4 rounded-4 shadow-lg">
           <h3 class="mb-3">🏁 Người chiến thắng!</h3>
           <h4>
-            <span class="neon-name">{{ winner.name }}</span> ({{
-              winner.score
-            }}
+            <span class="neon-name">{{ winner.name }}</span> ({{ winner.score }}
             điểm)
           </h4>
           <button class="btn btn-primary mt-3" @click="$emit('close-winner')">
@@ -84,6 +90,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:suggestOn": [value: boolean];
   "open-target": [];
+  "reset-round": [];
   "close-winner": [];
 }>();
 

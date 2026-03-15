@@ -160,6 +160,45 @@ body {
     z-index: 1025;
 }
 
+.target-actions {
+    flex-wrap: nowrap;
+}
+
+.target-badge {
+    font-size: 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.target-reset-btn {
+    padding: 0.38rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    background: rgba(220, 53, 69, 0.1);
+    color: #842029;
+    font-weight: 600;
+    line-height: 1.1;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.12s ease;
+}
+
+@media (hover: hover) {
+    .target-reset-btn:hover {
+        background: rgba(220, 53, 69, 0.18);
+        border-color: rgba(220, 53, 69, 0.55);
+        color: #6a1a24;
+    }
+}
+
+.target-reset-btn:focus-visible {
+    outline: 2px solid rgba(220, 53, 69, 0.45);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+.target-reset-btn:active {
+    transform: translateY(1px);
+}
+
 .main-row {
     flex: 1 1 auto;
     min-height: 0;
@@ -413,6 +452,24 @@ button.btn,
         font-family: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif !important;
         padding: 0.25rem 0.5rem;
         font-size: 1.05rem;
+    }
+
+    .target-reset-btn {
+        background: linear-gradient(180deg, #e4e4e4 0%, #bdbec0 100%) !important;
+        border: 2px solid #7a7a7a !important;
+        color: #222 !important;
+        border-radius: 0 !important;
+        text-shadow: none !important;
+        box-shadow: 1px 1px 0 #fff, 2px 2px 0 #7a7a7a;
+        font-family: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif !important;
+        padding: 0.22rem 0.7rem;
+    }
+
+    .target-reset-btn:active,
+    .target-reset-btn:focus,
+    .target-reset-btn:hover {
+        filter: brightness(0.95);
+        background: linear-gradient(180deg, #bdbec0 0%, #e4e4e4 100%) !important;
     }
 
     .chat-subheader {

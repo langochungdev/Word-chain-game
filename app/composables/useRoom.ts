@@ -265,9 +265,11 @@ export function useRoom(roomSlug: string) {
 
   async function resetRound(profileUid: string) {
     const roomRef = doc(db, "rooms", roomSlug);
+    const memberRef = doc(db, "rooms", roomSlug, "members", profileUid);
     const roomDoc = await getDoc(roomRef);
+    const memberDoc = await getDoc(memberRef);
     if (!roomDoc.exists()) throw new Error("ROOM_NOT_FOUND");
-    if (roomDoc.data().hostUid !== profileUid) throw new Error("NOT_HOST");
+    if (!memberDoc.exists()) throw new Error("NOT_IN_ROOM");
 
     const membersRef = collection(db, "rooms", roomSlug, "members");
     const membersSnap = await getDocs(membersRef);

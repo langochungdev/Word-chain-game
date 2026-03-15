@@ -32,6 +32,10 @@ importers:
       vue-router:
         specifier: ^5.0.3
         version: 5.0.3(@vue/compiler-sfc@3.5.30)(vue@3.5.30(typescript@5.9.3))
+    devDependencies:
+      an-array-of-english-words:
+        specifier: ^2.0.0
+        version: 2.0.0
 
 packages:
 
@@ -1567,6 +1571,10 @@ packages:
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
+
+  an-array-of-english-words@2.0.0:
+    resolution: {integrity: sha512-FXnNvZSOI27kkKXeLSquhaTGP7z198UOQ4txaYO9fCfrjCh+D5SV7G7XqzEH0229+pAi4cjBEZ4WIQYgjKtO7Q==}
+    hasBin: true
 
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
@@ -5269,6 +5277,8 @@ snapshots:
   acorn@8.16.0: {}
 
   agent-base@7.1.4: {}
+
+  an-array-of-english-words@2.0.0: {}
 
   ansi-regex@5.0.1: {}
 
