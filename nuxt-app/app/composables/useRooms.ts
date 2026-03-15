@@ -155,6 +155,7 @@ export function useRooms() {
               targetScore: 0,
               currentTurnUid: "",
               lastWord: "",
+              roundId: 0,
               winner: null,
             },
           });

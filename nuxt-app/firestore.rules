@@ -81,11 +81,13 @@ service cloud.firestore {
         data.updatedAt is timestamp &&
         data.lastActivityAt is timestamp &&
         data.gameState is map &&
-        data.gameState.keys().hasOnly(['targetScore', 'currentTurnUid', 'lastWord', 'winner']) &&
+        data.gameState.keys().hasOnly(['targetScore', 'currentTurnUid', 'lastWord', 'roundId', 'winner']) &&
         data.gameState.targetScore is int &&
         data.gameState.targetScore >= 0 &&
         data.gameState.currentTurnUid is string &&
         data.gameState.lastWord is string &&
+        data.gameState.roundId is int &&
+        data.gameState.roundId >= 0 &&
         isWinnerShapeValid(data.gameState.winner);
     }
 
@@ -100,6 +102,7 @@ service cloud.firestore {
         request.resource.data.gameState.targetScore == 0 &&
         request.resource.data.gameState.currentTurnUid == '' &&
         request.resource.data.gameState.lastWord == '' &&
+        request.resource.data.gameState.roundId == 0 &&
         request.resource.data.gameState.winner == null;
     }
 
@@ -124,6 +127,12 @@ service cloud.firestore {
 
     function roomGameStateMutationValid(roomId) {
       return (request.resource.data.gameState.targetScore == resource.data.gameState.targetScore || isRoomHost(resource.data)) &&
+        (request.resource.data.gameState.roundId == resource.data.gameState.roundId ||
+          (
+            isRoomHost(resource.data) &&
+            request.resource.data.gameState.roundId is int &&
+            request.resource.data.gameState.roundId >= resource.data.gameState.roundId
+          )) &&
         (request.resource.data.gameState.currentTurnUid == resource.data.gameState.currentTurnUid ||
           request.resource.data.gameState.currentTurnUid == request.auth.uid) &&
         (request.resource.data.gameState.lastWord == resource.data.gameState.lastWord || isRoomMemberAfter(roomId));
@@ -152,13 +161,15 @@ service cloud.firestore {
     }
 
     function isMessageShapeValid(data) {
-      return data.keys().hasOnly(['uid', 'displayName', 'text', 'points', 'createdAt']) &&
+      return data.keys().hasOnly(['uid', 'displayName', 'text', 'points', 'roundId', 'createdAt']) &&
         data.uid == request.auth.uid &&
         isDisplayNameValid(data.displayName) &&
         data.text is string &&
         data.text.size() > 0 &&
         data.points is int &&
         data.points == data.text.size() &&
+        data.roundId is int &&
+        data.roundId >= 0 &&
         data.createdAt == request.time;
     }
 
@@ -209,6 +220,12 @@ service cloud.firestore {
             request.resource.data.diff(resource.data).changedKeys().hasOnly(['role']) &&
             request.resource.data.role == 'host' &&
             uid == roomHostUidForMemberWrite(roomId)
+          ) ||
+          (
+            isRoomHost(get(roomRef(roomId)).data) &&
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['score']) &&
+            request.resource.data.score is int &&
+            request.resource.data.score >= 0
           )
         );
 

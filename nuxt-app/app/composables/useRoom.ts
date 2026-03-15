@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 
 const MAX_PLAYERS_CAP = 20;
@@ -30,6 +31,7 @@ type RoomMessage = {
   displayName: string;
   text: string;
   points: number;
+  roundId: number;
   createdAt: unknown;
 };
 
@@ -57,6 +59,7 @@ function normalizeMessage(
     displayName: String(data.displayName || "Unknown"),
     text: String(data.text || ""),
     points: Number(data.points || 0),
+    roundId: Number(data.roundId || 0),
     createdAt: data.createdAt || null,
   };
 }
@@ -166,7 +169,9 @@ export function useRoom(roomSlug: string) {
     profile: { uid: string; name: string },
     text: string,
   ) {
-    const content = String(text || "").trim();
+    const content = String(text || "")
+      .trim()
+      .toLowerCase();
     if (!content) throw new Error("MESSAGE_EMPTY");
 
     const roomRef = doc(db, "rooms", roomSlug);
@@ -180,10 +185,20 @@ export function useRoom(roomSlug: string) {
         throw new Error("NOT_IN_ROOM");
 
       const roomData = roomDoc.data();
+      if (roomData.status !== "open" && roomData.status !== "playing") {
+        throw new Error("ROOM_NOT_OPEN");
+      }
+
       const memberData = memberDoc.data();
+      const target = Number(roomData.gameState?.targetScore || 0);
+      if (target <= 0) throw new Error("TARGET_NOT_SET");
+      if (roomData.gameState?.winner) throw new Error("ROUND_FINISHED");
+
+      const roundId = Number(roomData.gameState?.roundId || 0);
+      if (roundId <= 0) throw new Error("ROUND_NOT_STARTED");
+
       const points = content.length;
       const score = Number(memberData.score || 0) + points;
-      const target = Number(roomData.gameState?.targetScore || 0);
       const winner =
         target > 0 && score >= target
           ? { uid: profile.uid, name: profile.name, score }
@@ -203,6 +218,7 @@ export function useRoom(roomSlug: string) {
           targetScore: target,
           currentTurnUid: profile.uid,
           lastWord: content,
+          roundId,
           winner,
         },
       });
@@ -212,6 +228,7 @@ export function useRoom(roomSlug: string) {
         displayName: profile.name,
         text: content,
         points,
+        roundId,
         createdAt: serverTimestamp(),
       });
     });
@@ -224,15 +241,59 @@ export function useRoom(roomSlug: string) {
     if (!roomDoc.exists()) throw new Error("ROOM_NOT_FOUND");
     if (roomDoc.data().hostUid !== profileUid) throw new Error("NOT_HOST");
 
+    const gameState = roomDoc.data().gameState || {};
+    const previousTarget = Number(gameState.targetScore || 0);
+    const previousRoundId = Number(gameState.roundId || 0);
+    const startsNewRound = value > 0 && previousTarget === 0;
+    const resetsRound = value === 0;
+    const nextRoundId = startsNewRound ? previousRoundId + 1 : previousRoundId;
+
     await updateDoc(roomRef, {
+      status: value > 0 ? "playing" : "open",
       updatedAt: serverTimestamp(),
+      lastActivityAt: serverTimestamp(),
       gameState: {
         targetScore: value,
-        currentTurnUid: roomDoc.data().gameState?.currentTurnUid || "",
-        lastWord: roomDoc.data().gameState?.lastWord || "",
-        winner: roomDoc.data().gameState?.winner || null,
+        currentTurnUid:
+          startsNewRound || resetsRound ? "" : gameState.currentTurnUid || "",
+        lastWord: startsNewRound || resetsRound ? "" : gameState.lastWord || "",
+        roundId: nextRoundId,
+        winner: startsNewRound || resetsRound ? null : gameState.winner || null,
       },
     });
+  }
+
+  async function resetRound(profileUid: string) {
+    const roomRef = doc(db, "rooms", roomSlug);
+    const roomDoc = await getDoc(roomRef);
+    if (!roomDoc.exists()) throw new Error("ROOM_NOT_FOUND");
+    if (roomDoc.data().hostUid !== profileUid) throw new Error("NOT_HOST");
+
+    const membersRef = collection(db, "rooms", roomSlug, "members");
+    const membersSnap = await getDocs(membersRef);
+    const roundId = Number(roomDoc.data().gameState?.roundId || 0);
+
+    const batch = writeBatch(db);
+    membersSnap.docs.forEach((memberDoc) => {
+      batch.update(memberDoc.ref, {
+        score: 0,
+      });
+    });
+
+    batch.update(roomRef, {
+      status: "open",
+      updatedAt: serverTimestamp(),
+      lastActivityAt: serverTimestamp(),
+      gameState: {
+        targetScore: 0,
+        currentTurnUid: "",
+        lastWord: "",
+        roundId,
+        winner: null,
+      },
+    });
+
+    await batch.commit();
   }
 
   async function leaveRoom(profileUid: string) {
@@ -302,6 +363,7 @@ export function useRoom(roomSlug: string) {
     joinRoom,
     sendMessage,
     setTargetScore,
+    resetRound,
     leaveRoom,
   };
 }
