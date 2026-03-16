@@ -18,7 +18,10 @@ function normalizeFlag(value: unknown): boolean {
 function shouldSkip(pathname: string): boolean {
   return (
     pathname === "/maintenance.html" ||
+    pathname === "/favicon.svg" ||
     pathname === "/favicon.ico" ||
+    pathname === "/apple-touch-icon.png" ||
+    pathname === "/site.webmanifest" ||
     pathname === "/robots.txt" ||
     pathname.startsWith("/_nuxt/")
   );
