@@ -12,6 +12,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
+import type { FirebaseError } from "firebase/app";
 
 const DEFAULT_MAX_PLAYERS = 8;
 const MAX_PLAYERS_CAP = 20;
@@ -76,6 +77,46 @@ function normalizeRoom(id: string, data: Record<string, unknown>): RoomSummary {
   };
 }
 
+function toMillis(value: unknown) {
+  const dateValue = value as { toDate?: () => Date; seconds?: number };
+  if (typeof dateValue?.toDate === "function") {
+    return dateValue.toDate().getTime();
+  }
+  if (typeof dateValue?.seconds === "number") {
+    return dateValue.seconds * 1000;
+  }
+  return 0;
+}
+
+function sortByUpdatedAtDesc(items: RoomSummary[]) {
+  return [...items].sort(
+    (a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt),
+  );
+}
+
+function mapRoomsQueryError(error: unknown) {
+  const firebaseError = error as FirebaseError;
+  const code = firebaseError?.code || "";
+
+  if (code === "permission-denied") {
+    return "Không đủ quyền đọc danh sách phòng public.";
+  }
+
+  if (code === "unauthenticated") {
+    return "Bạn chưa đăng nhập Firebase Auth.";
+  }
+
+  if (code === "failed-precondition") {
+    return "Thiếu Firestore index cho danh sách phòng. Đang dùng chế độ dự phòng.";
+  }
+
+  if (code === "unavailable" || code === "deadline-exceeded") {
+    return "Không thể kết nối Firestore, vui lòng thử lại.";
+  }
+
+  return "Không tải được danh sách phòng.";
+}
+
 export function useRooms() {
   const { db } = useFirebaseClient();
   const publicRooms = useState<RoomSummary[]>("rooms.public", () => []);
@@ -94,7 +135,34 @@ export function useRooms() {
       limit(20),
     );
 
-    return onSnapshot(
+    const fallbackQuery = query(
+      collection(db, "rooms"),
+      where("isPublic", "==", true),
+      where("status", "==", "open"),
+      limit(20),
+    );
+
+    let stopActive: (() => void) | null = null;
+
+    const startFallback = () => {
+      stopActive = onSnapshot(
+        fallbackQuery,
+        (snap) => {
+          const normalized = snap.docs.map((item) =>
+            normalizeRoom(item.id, item.data()),
+          );
+          publicRooms.value = sortByUpdatedAtDesc(normalized);
+          roomsLoading.value = false;
+          roomsError.value = "";
+        },
+        (error) => {
+          roomsError.value = mapRoomsQueryError(error);
+          roomsLoading.value = false;
+        },
+      );
+    };
+
+    stopActive = onSnapshot(
       q,
       (snap) => {
         publicRooms.value = snap.docs.map((item) =>
@@ -102,11 +170,25 @@ export function useRooms() {
         );
         roomsLoading.value = false;
       },
-      () => {
-        roomsError.value = "Khong tai duoc danh sach phong";
+      (error) => {
+        const firebaseError = error as FirebaseError;
+
+        if (firebaseError?.code === "failed-precondition") {
+          startFallback();
+          return;
+        }
+
+        roomsError.value = mapRoomsQueryError(error);
         roomsLoading.value = false;
       },
     );
+
+    return () => {
+      if (stopActive) {
+        stopActive();
+        stopActive = null;
+      }
+    };
   }
 
   async function createRoom({

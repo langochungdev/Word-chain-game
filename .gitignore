@@ -22,3 +22,7 @@ logs
 .env
 .env.*
 !.env.example
+
+**/UXUI.md
+**/BA.md
+**/SEO.md

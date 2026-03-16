@@ -694,3 +694,445 @@ button.btn,
         box-shadow: 0 6px 36px rgba(0, 0, 0, 0.25);
     }
 }
+
+.home-shell {
+    position: relative;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem 0 1.4rem;
+    background: var(--bs-body-bg) url('../images/bg.png') center center/cover no-repeat;
+}
+
+.home-shell__overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(164deg, rgba(4, 12, 24, 0.46), rgba(11, 34, 57, 0.24) 44%, rgba(5, 13, 23, 0.42));
+    pointer-events: none;
+}
+
+.home-shell__content {
+    position: relative;
+    z-index: 1;
+    max-width: 1140px;
+}
+
+.home-feedback-stack {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.home-glass-panel {
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(11px) saturate(140%);
+    -webkit-backdrop-filter: blur(11px) saturate(140%);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.home-hero {
+    padding: 1rem 1.15rem;
+    margin-bottom: 1rem;
+}
+
+.home-hero__subtitle {
+    color: rgba(14, 24, 38, 0.76);
+}
+
+.home-profile-badge {
+    background: rgba(16, 34, 58, 0.92);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.home-alert {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.home-status-panel {
+    padding: 0.9rem 1rem;
+}
+
+.home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.home-layout-desktop {
+    display: grid;
+}
+
+.home-mobile-stack {
+    display: none;
+}
+
+.home-mobile-frame {
+    display: none;
+}
+
+.home-mobile-list-frame {
+    display: none;
+}
+
+.home-actions,
+.home-public-list {
+    min-width: 0;
+}
+
+.home-actions {
+    display: grid;
+    gap: 1rem;
+}
+
+.home-card {
+    border: none;
+}
+
+.home-card__body {
+    padding: 1rem;
+}
+
+.home-section-copy {
+    color: rgba(22, 36, 54, 0.72);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.home-kicker {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: rgba(21, 40, 64, 0.62);
+}
+
+.home-label {
+    font-weight: 600;
+    color: rgba(17, 33, 53, 0.9);
+}
+
+.home-input {
+    min-height: 2.9rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    border-color: rgba(23, 51, 87, 0.24);
+    background: rgba(255, 255, 255, 0.86);
+}
+
+.home-input:focus {
+    border-color: rgba(45, 113, 199, 0.74);
+    box-shadow: 0 0 0 0.2rem rgba(25, 122, 212, 0.2);
+}
+
+.home-btn {
+    min-height: 2.9rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.home-join-controls>.home-btn {
+    min-width: 8.2rem;
+}
+
+.home-switch .form-check-input {
+    cursor: pointer;
+}
+
+.home-public-card-body {
+    min-height: 0;
+}
+
+.home-room-count {
+    min-width: 2.6rem;
+}
+
+.home-list-state {
+    margin-bottom: 0;
+}
+
+.home-room-list-scroll {
+    overflow: auto;
+    max-height: clamp(17rem, 52vh, 34rem);
+    min-height: 12rem;
+    padding-right: 0.15rem;
+}
+
+.home-room-list {
+    display: grid;
+    gap: 0.55rem;
+    background: transparent;
+    border-radius: 14px;
+    overflow: visible;
+}
+
+.home-room-item {
+    margin: 0;
+    padding: 0.72rem;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.52);
+}
+
+.home-room-item__meta {
+    min-width: 0;
+    padding-right: 0.65rem;
+}
+
+.home-room-item__title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-room-item__sub {
+    display: inline-block;
+    margin-top: 0.1rem;
+}
+
+.home-room-btn {
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding-inline: 0.95rem;
+}
+
+.home-btn:focus-visible,
+.home-room-btn:focus-visible,
+.home-profile-badge:focus-visible,
+.home-input:focus-visible {
+    outline: 2px solid rgba(15, 99, 196, 0.4);
+    outline-offset: 1px;
+}
+
+.home-name-modal .modal-dialog {
+    max-width: 460px;
+}
+
+.home-modal-content {
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px) saturate(135%);
+    -webkit-backdrop-filter: blur(12px) saturate(135%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+
+@media (hover: hover) {
+    .home-glass-panel:hover {
+        background: rgba(255, 255, 255, 0.75);
+        box-shadow: 0 15px 38px rgba(0, 0, 0, 0.2);
+    }
+
+    .home-room-item:hover {
+        background: rgba(255, 255, 255, 0.64);
+        transform: translateY(-1px);
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .home-shell__content {
+        max-width: 980px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .home-shell {
+        padding: 0.9rem 0 1.2rem;
+    }
+
+    .home-shell__content {
+        padding-inline: 0.9rem;
+    }
+
+    .home-layout {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+    }
+
+    .home-room-list-scroll {
+        max-height: clamp(15rem, 46dvh, 27rem);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .home-shell {
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+        padding: 0.75rem 0 1rem;
+    }
+
+    .home-shell__content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        overflow: hidden;
+        padding-inline: 0.75rem;
+    }
+
+    .home-hero-desktop {
+        display: none !important;
+    }
+
+    .home-layout-desktop {
+        display: none;
+    }
+
+    .home-mobile-stack {
+        display: flex;
+        flex: 1 1 auto;
+        min-height: 0;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    .home-mobile-frame {
+        display: block;
+        flex-shrink: 0;
+        border-radius: 16px;
+        padding: 0.8rem;
+    }
+
+    .home-mobile-list-frame {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        border-radius: 16px;
+        padding: 0.7rem;
+    }
+
+    .home-mobile-list-head {
+        flex-shrink: 0;
+    }
+
+    .home-mobile-list-scroll {
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 0.12rem;
+    }
+
+    .home-mobile-frame__head {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 0.55rem;
+    }
+
+    .home-mobile-user {
+        background: rgba(15, 33, 58, 0.9);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        padding: 0.4rem 0.72rem;
+        font-size: 0.78rem;
+    }
+
+    .home-mobile-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.45rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .home-mobile-tab {
+        min-height: 2.45rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        background: rgba(255, 255, 255, 0.45);
+        color: rgba(17, 35, 56, 0.88);
+        font-weight: 600;
+        font-size: 0.86rem;
+    }
+
+    .home-mobile-tab.is-active {
+        background: rgba(16, 65, 126, 0.88);
+        color: #fff;
+        border-color: rgba(18, 72, 138, 0.92);
+        box-shadow: 0 6px 16px rgba(10, 50, 97, 0.28);
+    }
+
+    .home-mobile-panel {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        background: rgba(255, 255, 255, 0.52);
+        padding: 0.75rem;
+    }
+
+    .home-mobile-join-controls {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .home-hero {
+        border-radius: 14px;
+        padding: 0.9rem;
+        gap: 0.75rem !important;
+    }
+
+    .home-hero h1 {
+        font-size: 1.35rem;
+    }
+
+    .home-profile-badge {
+        font-size: 0.82rem;
+        padding: 0.4rem 0.62rem !important;
+    }
+
+    .home-card__body {
+        padding: 0.85rem;
+    }
+
+    .home-section-copy {
+        font-size: 0.9rem;
+        margin-bottom: 0.6rem !important;
+    }
+
+    .home-input,
+    .home-btn {
+        min-height: 2.8rem;
+    }
+
+    .home-input-group.home-join-controls {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+    }
+
+    .home-input-group.home-join-controls>.home-btn {
+        width: 100%;
+    }
+
+    .home-room-list-scroll {
+        max-height: min(44dvh, 22rem);
+        min-height: 11rem;
+    }
+
+    .home-room-item {
+        padding: 0.6rem;
+        align-items: flex-start !important;
+        flex-wrap: wrap;
+        row-gap: 0.45rem;
+    }
+
+    .home-room-btn {
+        width: 100%;
+        min-height: 2.6rem;
+    }
+}

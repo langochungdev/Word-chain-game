@@ -1,50 +1,209 @@
 <template>
-  <main class="container py-4" style="min-height: 100dvh; overflow: auto">
-    <header
-      class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"
-    >
-      <div>
-        <h1 class="h3 m-0">Word Chain Rooms</h1>
-        <p class="text-muted m-0">
-          Tao phong, vao phong bang ma, hoac chon phong public.
-        </p>
+  <main class="home-shell">
+    <div class="home-shell__overlay" aria-hidden="true"></div>
+
+    <div class="container home-shell__content">
+      <header
+        class="home-glass-panel home-hero home-hero-desktop d-flex flex-wrap justify-content-between align-items-start align-items-md-center gap-3 mb-4 mb-lg-5"
+      >
+        <div>
+          <h1 class="display-6 fw-semibold mb-1">Phòng Word Chain</h1>
+          <p class="home-hero__subtitle mb-0">
+            Tạo phòng, vào phòng bằng mã, hoặc chọn phòng public.
+          </p>
+        </div>
+        <div class="badge px-3 py-2 home-profile-badge">
+          {{ name || "Khách" }}
+        </div>
+      </header>
+
+      <div v-if="profileError || actionError" class="home-feedback-stack">
+        <div
+          v-if="profileError"
+          class="alert alert-danger home-alert"
+          role="alert"
+        >
+          {{ profileError }}
+        </div>
+        <div
+          v-if="actionError"
+          class="alert alert-warning home-alert"
+          role="alert"
+        >
+          {{ actionError }}
+        </div>
       </div>
-      <div class="badge text-bg-dark px-3 py-2">{{ name || "Guest" }}</div>
-    </header>
 
-    <div v-if="profileError" class="alert alert-danger" role="alert">
-      {{ profileError }}
-    </div>
-    <div v-if="actionError" class="alert alert-warning" role="alert">
-      {{ actionError }}
-    </div>
+      <section
+        v-if="!profileReady"
+        class="home-glass-panel home-status-panel d-flex align-items-center gap-2"
+      >
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Đang khởi tạo profile...</span>
+      </section>
 
-    <div v-if="!profileReady" class="d-flex align-items-center gap-2">
-      <div class="spinner-border spinner-border-sm" role="status"></div>
-      <span>Dang khoi tao profile...</span>
-    </div>
+      <div v-else>
+        <div class="home-mobile-stack">
+          <section
+            class="home-glass-panel home-mobile-frame"
+            aria-label="Hành động trên mobile"
+          >
+            <div class="home-mobile-frame__head">
+              <span class="badge home-mobile-user">{{ name || "Khách" }}</span>
+            </div>
 
-    <div v-else class="row g-3">
-      <HomeActions
-        v-model:join-code="joinCode"
-        v-model:create-code="createCode"
-        v-model:is-public="isPublic"
-        :busy="busy"
-        @join="handleJoin"
-        @create="handleCreate"
-      />
-      <PublicRoomsList
-        :rooms="publicRooms"
-        :rooms-loading="roomsLoading"
-        :rooms-error="roomsError"
-        :format-updated-at="formatUpdatedAt"
-        @go="goToRoom"
-      />
+            <div
+              class="home-mobile-tabs"
+              role="tablist"
+              aria-label="Thao tác phòng"
+            >
+              <button
+                type="button"
+                class="btn home-mobile-tab"
+                :class="mobileTab === 'join' ? 'is-active' : ''"
+                :aria-selected="mobileTab === 'join'"
+                @click="mobileTab = 'join'"
+              >
+                Tham gia phòng
+              </button>
+              <button
+                type="button"
+                class="btn home-mobile-tab"
+                :class="mobileTab === 'create' ? 'is-active' : ''"
+                :aria-selected="mobileTab === 'create'"
+                @click="mobileTab = 'create'"
+              >
+                Tạo phòng
+              </button>
+            </div>
+
+            <section v-if="mobileTab === 'join'" class="home-mobile-panel">
+              <label class="form-label home-label">Mã phòng</label>
+              <div class="home-mobile-join-controls">
+                <input
+                  v-model="joinCode"
+                  class="form-control form-control-lg home-input"
+                  maxlength="4"
+                  inputmode="numeric"
+                  placeholder="Nhập mã 4 số"
+                  @keyup.enter="handleJoin"
+                />
+                <button
+                  class="btn btn-primary home-btn"
+                  :disabled="busy === 'join'"
+                  @click="handleJoin"
+                >
+                  {{ busy === "join" ? "Đang vào..." : "Vào phòng" }}
+                </button>
+              </div>
+            </section>
+
+            <section v-else class="home-mobile-panel">
+              <label class="form-label home-label">Mã phòng (tùy chọn)</label>
+              <input
+                v-model="createCode"
+                class="form-control home-input mb-3"
+                maxlength="4"
+                inputmode="numeric"
+                placeholder="Để trống để tự tạo"
+              />
+
+              <div class="form-check form-switch mb-3 home-switch">
+                <input
+                  id="publicRoomSwitchMobile"
+                  v-model="isPublic"
+                  class="form-check-input"
+                  type="checkbox"
+                />
+                <label class="form-check-label" for="publicRoomSwitchMobile"
+                  >Phòng public</label
+                >
+              </div>
+
+              <button
+                class="btn btn-success home-btn w-100"
+                :disabled="busy === 'create'"
+                @click="handleCreate"
+              >
+                {{ busy === "create" ? "Đang tạo..." : "Tạo phòng" }}
+              </button>
+            </section>
+          </section>
+
+          <section
+            class="home-glass-panel home-mobile-list-frame"
+            aria-label="Danh sách phòng public trên mobile"
+          >
+            <div
+              class="d-flex align-items-center justify-content-between mb-2 home-mobile-list-head"
+            >
+              <h3 class="h6 m-0">Phòng public</h3>
+              <span class="badge rounded-pill text-bg-dark">{{
+                publicRooms.length
+              }}</span>
+            </div>
+
+            <p v-if="roomsLoading" class="small text-muted m-0">
+              Đang tải danh sách...
+            </p>
+            <p v-else-if="roomsError" class="small text-danger m-0">
+              {{ roomsError }}
+            </p>
+            <p v-else-if="!publicRooms.length" class="small text-muted m-0">
+              Chưa có phòng public nào.
+            </p>
+
+            <div v-else class="home-mobile-list-scroll mt-2">
+              <ul class="list-group list-group-flush home-room-list">
+                <li
+                  v-for="room in publicRooms"
+                  :key="room.slug"
+                  class="list-group-item home-room-item d-flex justify-content-between align-items-center"
+                >
+                  <div class="home-room-item__meta">
+                    <div class="fw-semibold home-room-item__title">
+                      #{{ room.slug }} · {{ room.hostName }}
+                    </div>
+                    <small class="text-muted home-room-item__sub"
+                      >{{ room.playerCount }}/{{ room.maxPlayers }} ·
+                      {{ formatUpdatedAt(room.updatedAt) }}</small
+                    >
+                  </div>
+                  <button
+                    class="btn btn-outline-primary btn-sm home-room-btn"
+                    @click="goToRoom(room.slug)"
+                  >
+                    Vào ngay
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </section>
+        </div>
+
+        <div class="home-layout home-layout-desktop">
+          <HomeActions
+            v-model:join-code="joinCode"
+            v-model:create-code="createCode"
+            v-model:is-public="isPublic"
+            :busy="busy"
+            @join="handleJoin"
+            @create="handleCreate"
+          />
+          <PublicRoomsList
+            :rooms="publicRooms"
+            :rooms-loading="roomsLoading"
+            :rooms-error="roomsError"
+            :format-updated-at="formatUpdatedAt"
+            @go="goToRoom"
+          />
+        </div>
+      </div>
     </div>
 
     <NameGateModal
       :visible="profileReady && !hasName && !profileError"
-      title="Nhap ten truoc khi tiep tuc"
+      title="Nhập tên trước khi tiếp tục"
       v-model="nameInput"
       :error="nameError"
       @submit="submitName"
@@ -86,6 +245,7 @@ const nameInput = ref("");
 const nameError = ref("");
 const actionError = ref("");
 const busy = ref<"" | "join" | "create">("");
+const mobileTab = ref<"join" | "create">("join");
 
 let stopPublicRooms: (() => void) | null = null;
 
@@ -101,19 +261,19 @@ function normalizeCode(value: string) {
 }
 
 function mapError(error: unknown) {
-  if (!(error instanceof Error)) return "Co loi khong xac dinh";
+  if (!(error instanceof Error)) return "Có lỗi không xác định";
   if (error.message === "MA_PHONG_KHONG_HOP_LE")
-    return "Ma phong phai gom 4 chu so";
-  if (error.message === "MA_PHONG_DA_TON_TAI") return "Ma phong da ton tai";
+    return "Mã phòng phải gồm 4 chữ số";
+  if (error.message === "MA_PHONG_DA_TON_TAI") return "Mã phòng đã tồn tại";
   if (error.message === "KHONG_THE_TAO_PHONG")
-    return "Khong the tao phong luc nay";
+    return "Không thể tạo phòng lúc này";
   if (error.message === "KHONG_DU_QUYEN_FIRESTORE")
-    return "Khong du quyen ghi Firestore. Kiem tra lai firestore.rules da deploy dung project.";
+    return "Không đủ quyền ghi Firestore. Kiểm tra lại firestore.rules đã deploy đúng project.";
   if (error.message === "CHUA_DANG_NHAP")
-    return "Chua xac thuc Firebase Auth. Kiem tra Anonymous Auth da bat.";
-  if (error.message === "TEN_KHONG_HOP_LE") return "Ten phai tu 2 den 24 ky tu";
+    return "Chưa xác thực Firebase Auth. Kiểm tra Anonymous Auth đã bật.";
+  if (error.message === "TEN_KHONG_HOP_LE") return "Tên phải từ 2 đến 24 ký tự";
   if (error.message === "USER_KHONG_HOP_LE")
-    return "Khong tim thay danh tinh nguoi dung";
+    return "Không tìm thấy danh tính người dùng";
   return error.message;
 }
 

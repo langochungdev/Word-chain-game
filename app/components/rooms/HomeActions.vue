@@ -1,42 +1,54 @@
 <template>
-  <section class="col-12 col-lg-7">
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <h2 class="h5">Vao phong bang ma</h2>
-        <div class="input-group">
+  <section class="home-actions" aria-label="Hành động phòng">
+    <div class="home-glass-panel home-card home-action-card">
+      <div class="home-card__body">
+        <div class="home-section-head mb-3">
+          <p class="home-kicker mb-1">Vào nhanh</p>
+          <h2 class="h5 mb-0">Vào phòng bằng mã</h2>
+        </div>
+        <p class="home-section-copy mb-3">
+          Nhập mã 4 số để vào thẳng phòng đang chơi.
+        </p>
+        <div class="input-group home-input-group home-join-controls">
           <input
             v-model="joinCodeModel"
-            class="form-control form-control-lg"
+            class="form-control form-control-lg home-input"
             maxlength="4"
             inputmode="numeric"
-            placeholder="Nhap ma 4 so"
+            placeholder="Nhập mã 4 số"
             @keyup.enter="$emit('join')"
           />
           <button
-            class="btn btn-primary"
+            class="btn btn-primary home-btn"
             :disabled="busy === 'join'"
             @click="$emit('join')"
           >
-            {{ busy === "join" ? "Dang vao..." : "Vao phong" }}
+            {{ busy === "join" ? "Đang vào..." : "Vào phòng" }}
           </button>
         </div>
       </div>
     </div>
 
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h5">Tao phong moi</h2>
+    <div class="home-glass-panel home-card home-action-card">
+      <div class="home-card__body">
+        <div class="home-section-head mb-3">
+          <p class="home-kicker mb-1">Tạo mới</p>
+          <h2 class="h5 mb-0">Tạo phòng mới</h2>
+        </div>
+        <p class="home-section-copy mb-3">
+          Tạo phòng private hoặc public để bắt đầu trận ngay.
+        </p>
         <div class="mb-3">
-          <label class="form-label">Room code (tuy chon)</label>
+          <label class="form-label home-label">Mã phòng (tùy chọn)</label>
           <input
             v-model="createCodeModel"
-            class="form-control"
+            class="form-control home-input"
             maxlength="4"
             inputmode="numeric"
-            placeholder="De trong de auto"
+            placeholder="Để trống để tự tạo"
           />
         </div>
-        <div class="form-check form-switch mb-3">
+        <div class="form-check form-switch mb-3 home-switch">
           <input
             id="publicRoomSwitch"
             v-model="isPublicModel"
@@ -44,15 +56,15 @@
             type="checkbox"
           />
           <label class="form-check-label" for="publicRoomSwitch"
-            >Phong public</label
+            >Phòng public</label
           >
         </div>
         <button
-          class="btn btn-success"
+          class="btn btn-success home-btn"
           :disabled="busy === 'create'"
           @click="$emit('create')"
         >
-          {{ busy === "create" ? "Dang tao..." : "Tao phong" }}
+          {{ busy === "create" ? "Đang tạo..." : "Tạo phòng" }}
         </button>
       </div>
     </div>
