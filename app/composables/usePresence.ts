@@ -6,41 +6,60 @@ export function usePresence() {
 
   let roomSlug = "";
   let uid = "";
-  let ticker: ReturnType<typeof window.setInterval> | null = null;
+  let ticker: ReturnType<typeof setInterval> | null = null;
   let started = false;
+  let writeQueue: Promise<void> = Promise.resolve();
+
+  function enqueueWrite(task: () => Promise<void>) {
+    writeQueue = writeQueue.then(task, task);
+    return writeQueue;
+  }
 
   async function setOnlineState(online: boolean) {
-    if (!roomSlug || !uid) return;
+    await enqueueWrite(async () => {
+      if (!roomSlug || !uid) return;
 
-    const memberRef = doc(db, "rooms", roomSlug, "members", uid);
-    const payload = {
-      isOnline: online,
-      lastSeenAt: serverTimestamp(),
-    };
+      const memberRef = doc(db, "rooms", roomSlug, "members", uid);
+      const roomRef = doc(db, "rooms", roomSlug);
+      const payload = {
+        isOnline: online,
+        lastSeenAt: serverTimestamp(),
+      };
 
-    try {
-      await setDoc(memberRef, payload, { merge: true });
-      presenceError.value = "";
-    } catch (setError) {
       try {
-        await updateDoc(memberRef, payload);
+        await setDoc(memberRef, payload, { merge: true });
+        if (online) {
+          await updateDoc(roomRef, {
+            lastActivityAt: serverTimestamp(),
+          });
+        }
         presenceError.value = "";
-      } catch {
-        presenceError.value = `Presence update failed: ${String(setError)}`;
+      } catch (setError) {
+        try {
+          await updateDoc(memberRef, payload);
+          if (online) {
+            await updateDoc(roomRef, {
+              lastActivityAt: serverTimestamp(),
+            });
+          }
+          presenceError.value = "";
+        } catch {
+          presenceError.value = `Presence update failed: ${String(setError)}`;
+        }
       }
-    }
+    });
   }
 
   const onVisibilityChange = () => {
     if (document.hidden) {
-      setOnlineState(false);
+      void setOnlineState(false);
       return;
     }
-    setOnlineState(true);
+    void setOnlineState(true);
   };
 
   const onPageHide = () => {
-    setOnlineState(false);
+    void setOnlineState(false);
   };
 
   function startPresence({
@@ -56,9 +75,9 @@ export function usePresence() {
     uid = profileUid;
     started = true;
 
-    setOnlineState(true);
-    ticker = window.setInterval(() => {
-      setOnlineState(true);
+    void setOnlineState(true);
+    ticker = setInterval(() => {
+      void setOnlineState(true);
     }, 20000);
 
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -80,6 +99,8 @@ export function usePresence() {
     }
 
     await setOnlineState(false);
+    roomSlug = "";
+    uid = "";
   }
 
   return {

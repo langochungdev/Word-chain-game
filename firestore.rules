@@ -167,7 +167,7 @@ service cloud.firestore {
         request.resource.data.isPublic == false &&
         request.resource.data.updatedAt == request.time &&
         resource.data.status == 'open' &&
-        resource.data.lastActivityAt < request.time - duration.value(6, 'h');
+        resource.data.lastActivityAt < request.time - duration.value(3, 'm');
     }
 
     function isMemberShapeValid(data, roomId, uid) {
@@ -230,7 +230,10 @@ service cloud.firestore {
           canCloseStaleRoom()
         );
 
-      allow delete: if false;
+      allow delete: if isSignedIn() &&
+        isRoomIdValid(roomId) &&
+        (isRoomHost(resource.data) || isRoomMemberAfter(roomId)) &&
+        resource.data.playerCount <= 1;
     }
 
     match /rooms/{roomId}/members/{uid} {

@@ -10,6 +10,7 @@
       @open-target="openTargetDialog"
       @reset-round="resetGameRound"
       @close-winner="closeWinner"
+      @go-home="goHomeFromRoom"
     />
 
     <div class="row g-0 main-row" style="height: 100%">
@@ -72,6 +73,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { usePresence } from "~/composables/usePresence";
 import { useProfile } from "~/composables/useProfile";
 import { useRoom } from "~/composables/useRoom";
+import { useRooms } from "~/composables/useRooms";
 import { useLocalDictionary } from "~/composables/word-chain/useLocalDictionary";
 import { useWordChainSuggestions } from "~/composables/word-chain/useWordChainSuggestions";
 
@@ -152,6 +154,7 @@ const {
   resetRound,
   leaveRoom,
 } = useRoom(roomSlug);
+const { cleanupStaleRooms } = useRooms();
 const { startPresence, stopPresence, presenceError } = usePresence();
 
 const messageInput = ref("");
@@ -166,7 +169,9 @@ const sendingWord = ref(false);
 const showWinner = ref(false);
 const winner = ref<WinnerState>(null);
 const optimisticMessage = ref<OptimisticMessageState | null>(null);
+const leavingToHome = ref(false);
 let unsubscribeRoom: (() => void) | null = null;
+let staleCleanupTicker: ReturnType<typeof setInterval> | null = null;
 
 const { has: hasDictionaryWord } = useLocalDictionary();
 
@@ -473,6 +478,24 @@ async function closeWinner() {
   }
 }
 
+async function goHomeFromRoom() {
+  if (leavingToHome.value) return;
+  leavingToHome.value = true;
+
+  try {
+    if (uid.value) {
+      const profileUid = uid.value;
+      await stopPresence().catch(() => undefined);
+      await leaveRoom(profileUid, { deleteRoomWhenEmpty: true });
+      joined.value = false;
+    }
+  } catch (error) {
+    pushActionError(mapError(error));
+  } finally {
+    await router.push("/");
+  }
+}
+
 watch(
   () => roomState.value?.gameState?.winner,
   (nextWinner) => {
@@ -518,6 +541,11 @@ onMounted(async () => {
   await bootstrapProfile();
   nameInput.value = name.value;
 
+  cleanupStaleRooms(0.05).catch(() => undefined);
+  staleCleanupTicker = setInterval(() => {
+    cleanupStaleRooms(0.05).catch(() => undefined);
+  }, 60000);
+
   if (!hasName.value) return;
 
   try {
@@ -530,14 +558,19 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopSuggestions();
 
+  if (staleCleanupTicker) {
+    clearInterval(staleCleanupTicker);
+    staleCleanupTicker = null;
+  }
+
   if (unsubscribeRoom) {
     unsubscribeRoom();
     unsubscribeRoom = null;
   }
 
-  if (joined.value) {
-    leaveRoom(uid.value).catch(() => undefined);
+  if (uid.value && joined.value && !leavingToHome.value) {
     stopPresence().catch(() => undefined);
+    leaveRoom(uid.value, { deleteRoomWhenEmpty: true }).catch(() => undefined);
   }
 });
 </script>

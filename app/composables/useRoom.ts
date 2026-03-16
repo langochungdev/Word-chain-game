@@ -9,12 +9,12 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  setDoc,
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
 
 const MAX_PLAYERS_CAP = 20;
+const LEAVE_TX_MAX_RETRIES = 3;
 
 type RoomMember = {
   uid: string;
@@ -298,60 +298,51 @@ export function useRoom(roomSlug: string) {
     await batch.commit();
   }
 
-  async function leaveRoom(profileUid: string) {
+  async function leaveRoom(
+    profileUid: string,
+    options?: { deleteRoomWhenEmpty?: boolean },
+  ) {
     const roomRef = doc(db, "rooms", roomSlug);
     const memberRef = doc(db, "rooms", roomSlug, "members", profileUid);
+    const deleteRoomWhenEmpty = options?.deleteRoomWhenEmpty ?? true;
 
-    const leaveResult = await runTransaction(db, async (tx) => {
-      const roomTx = await tx.get(roomRef);
-      const memberTx = await tx.get(memberRef);
-      if (!roomTx.exists() || !memberTx.exists()) {
-        return { left: false, wasHost: false };
+    const runLeaveTransaction = () =>
+      runTransaction(db, async (tx) => {
+        const roomTx = await tx.get(roomRef);
+        const memberTx = await tx.get(memberRef);
+        if (!roomTx.exists() || !memberTx.exists()) {
+          return;
+        }
+
+        const playerCount = Number(roomTx.data().playerCount || 0);
+        const remainingCount = Math.max(0, playerCount - 1);
+
+        tx.delete(memberRef);
+
+        if (remainingCount === 0 && deleteRoomWhenEmpty) {
+          tx.delete(roomRef);
+          return;
+        }
+
+        tx.update(roomRef, {
+          playerCount: remainingCount,
+          updatedAt: serverTimestamp(),
+          lastActivityAt: serverTimestamp(),
+        });
+      });
+
+    for (let attempt = 1; attempt <= LEAVE_TX_MAX_RETRIES; attempt += 1) {
+      try {
+        await runLeaveTransaction();
+        break;
+      } catch (error) {
+        const code = String((error as { code?: string })?.code || "");
+        const isRetryable = code === "failed-precondition";
+        if (!isRetryable || attempt === LEAVE_TX_MAX_RETRIES) {
+          throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, attempt * 120));
       }
-
-      const wasHost = roomTx.data().hostUid === profileUid;
-      const playerCount = Number(roomTx.data().playerCount || 0);
-      tx.delete(memberRef);
-      tx.update(roomRef, {
-        playerCount: Math.max(0, playerCount - 1),
-        updatedAt: serverTimestamp(),
-        lastActivityAt: serverTimestamp(),
-      });
-
-      return { left: true, wasHost };
-    });
-
-    if (!leaveResult.left) return;
-
-    const remain = await getDocs(
-      query(
-        collection(db, "rooms", roomSlug, "members"),
-        orderBy("joinedAt", "asc"),
-        limit(1),
-      ),
-    );
-
-    if (remain.empty) {
-      await updateDoc(roomRef, {
-        status: "closed",
-        isPublic: false,
-        hostUid: "",
-        hostName: "",
-        updatedAt: serverTimestamp(),
-        lastActivityAt: serverTimestamp(),
-      });
-      return;
-    }
-
-    if (leaveResult.wasHost) {
-      const nextHost = remain.docs[0];
-      await updateDoc(roomRef, {
-        hostUid: nextHost.id,
-        hostName: nextHost.data().displayName || "Host",
-        updatedAt: serverTimestamp(),
-        lastActivityAt: serverTimestamp(),
-      });
-      await setDoc(nextHost.ref, { role: "host" }, { merge: true });
     }
   }
 

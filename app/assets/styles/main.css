@@ -164,6 +164,41 @@ body {
     flex-wrap: nowrap;
 }
 
+.room-home-btn {
+    min-width: 4.95rem;
+    border-radius: 999px;
+    padding: 0.32rem 0.86rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.chat-header .btn.btn-outline-secondary {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.62) url('../images/bg.png') center center/cover no-repeat !important;
+    color: #1c3556 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.chat-header .btn.btn-outline-secondary:focus-visible,
+.room-home-btn:focus-visible {
+    outline: 2px solid rgba(13, 110, 253, 0.35);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+@media (hover: hover) {
+
+    .chat-header .btn.btn-outline-secondary:hover,
+    .room-home-btn:hover {
+        background: rgba(255, 255, 255, 0.74) url('../images/bg.png') center center/cover no-repeat !important;
+        color: #132947 !important;
+        border-color: rgba(255, 255, 255, 0.68) !important;
+    }
+}
+
 .target-badge {
     font-size: 1rem;
     cursor: pointer;
@@ -463,6 +498,28 @@ button.btn,
         box-shadow: 1px 1px 0 #fff, 2px 2px 0 #7a7a7a;
         font-family: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif !important;
         padding: 0.22rem 0.7rem;
+    }
+
+    .chat-header .btn.btn-outline-secondary,
+    .room-home-btn {
+        background: linear-gradient(180deg, #e4e4e4 0%, #bdbec0 100%) !important;
+        border: 2px solid #7a7a7a !important;
+        color: #222 !important;
+        border-radius: 0 !important;
+        box-shadow: 1px 1px 0 #fff, 2px 2px 0 #7a7a7a;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        font-family: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif !important;
+    }
+
+    .chat-header .btn.btn-outline-secondary:active,
+    .chat-header .btn.btn-outline-secondary:focus,
+    .chat-header .btn.btn-outline-secondary:hover,
+    .room-home-btn:active,
+    .room-home-btn:focus,
+    .room-home-btn:hover {
+        filter: brightness(0.95);
+        background: linear-gradient(180deg, #bdbec0 0%, #e4e4e4 100%) !important;
     }
 
     .target-reset-btn:active,
@@ -844,6 +901,52 @@ button.btn,
     font-weight: 600;
 }
 
+.home-btn.btn-success {
+    border-radius: 999px !important;
+    padding: 0.32rem 0.86rem;
+    font-weight: 600;
+    line-height: 1.1;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.62) url('../images/bg.png') center center/cover no-repeat !important;
+    color: #1c3556 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.home-btn.btn-success:focus-visible {
+    outline: 2px solid rgba(13, 110, 253, 0.35);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+.home-btn.btn-success:disabled {
+    color: rgba(28, 53, 86, 0.72) !important;
+    border-color: rgba(255, 255, 255, 0.42) !important;
+    opacity: 0.9;
+}
+
+@media (prefers-color-scheme: dark) {
+    .home-btn.btn-success {
+        background: linear-gradient(180deg, #e4e4e4 0%, #bdbec0 100%) !important;
+        border: 2px solid #7a7a7a !important;
+        color: #222 !important;
+        border-radius: 0 !important;
+        text-shadow: none !important;
+        box-shadow: 1px 1px 0 #fff, 2px 2px 0 #7a7a7a;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        font-family: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif !important;
+    }
+
+    .home-btn.btn-success:active,
+    .home-btn.btn-success:focus,
+    .home-btn.btn-success:hover {
+        filter: brightness(0.95);
+        background: linear-gradient(180deg, #bdbec0 0%, #e4e4e4 100%) !important;
+    }
+}
+
 .home-join-controls>.home-btn {
     min-width: 8.2rem;
 }
@@ -934,6 +1037,12 @@ button.btn,
     .home-glass-panel:hover {
         background: rgba(255, 255, 255, 0.75);
         box-shadow: 0 15px 38px rgba(0, 0, 0, 0.2);
+    }
+
+    .home-btn.btn-success:hover {
+        background: rgba(255, 255, 255, 0.74) url('../images/bg.png') center center/cover no-repeat !important;
+        color: #132947 !important;
+        border-color: rgba(255, 255, 255, 0.68) !important;
     }
 
     .home-room-item:hover {
@@ -1073,6 +1182,25 @@ button.btn,
         border: 1px solid rgba(255, 255, 255, 0.42);
         background: rgba(255, 255, 255, 0.52);
         padding: 0.75rem;
+    }
+
+    .home-mobile-create-row {
+        display: flex;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .home-mobile-create-row .home-input {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin-bottom: 0 !important;
+    }
+
+    .home-mobile-create-row .home-privacy-toggle {
+        flex: 0 0 auto;
+        min-width: 6.6rem;
+        padding-inline: 0.7rem;
+        white-space: nowrap;
     }
 
     .home-mobile-join-controls {

@@ -42,7 +42,7 @@
         <span>Đang khởi tạo profile...</span>
       </section>
 
-      <div v-else>
+      <div v-else class="home-ready-content">
         <div class="home-mobile-stack">
           <section
             class="home-glass-panel home-mobile-frame"
@@ -100,24 +100,23 @@
 
             <section v-else class="home-mobile-panel">
               <label class="form-label home-label">Mã phòng (tùy chọn)</label>
-              <input
-                v-model="createCode"
-                class="form-control home-input mb-3"
-                maxlength="4"
-                inputmode="numeric"
-                placeholder="Để trống để tự tạo"
-              />
-
-              <div class="form-check form-switch mb-3 home-switch">
+              <div class="home-mobile-create-row mb-3">
                 <input
-                  id="publicRoomSwitchMobile"
-                  v-model="isPublic"
-                  class="form-check-input"
-                  type="checkbox"
+                  v-model="createCode"
+                  class="form-control home-input"
+                  maxlength="4"
+                  inputmode="numeric"
+                  placeholder="Để trống để tự tạo"
                 />
-                <label class="form-check-label" for="publicRoomSwitchMobile"
-                  >Phòng public</label
+                <button
+                  type="button"
+                  class="btn home-btn home-privacy-toggle"
+                  :class="isPublic ? 'btn-primary' : 'btn-outline-secondary'"
+                  :aria-pressed="isPublic"
+                  @click="isPublic = !isPublic"
                 >
+                  {{ isPublic ? "Public" : "Private" }}
+                </button>
               </div>
 
               <button
@@ -235,6 +234,7 @@ const {
   roomsError,
   subscribePublicRooms,
   createRoom,
+  cleanupStaleRooms,
   ensureRoomCode,
 } = useRooms();
 
@@ -248,6 +248,7 @@ const busy = ref<"" | "join" | "create">("");
 const mobileTab = ref<"join" | "create">("join");
 
 let stopPublicRooms: (() => void) | null = null;
+let staleCleanupTicker: ReturnType<typeof setInterval> | null = null;
 
 function startPublicRooms() {
   if (!hasName.value || stopPublicRooms) return;
@@ -340,10 +341,21 @@ async function handleCreate() {
 onMounted(async () => {
   await bootstrapProfile();
   nameInput.value = name.value;
+
+  cleanupStaleRooms(0.05).catch(() => undefined);
+  staleCleanupTicker = setInterval(() => {
+    cleanupStaleRooms(0.05).catch(() => undefined);
+  }, 60000);
+
   startPublicRooms();
 });
 
 onBeforeUnmount(() => {
+  if (staleCleanupTicker) {
+    clearInterval(staleCleanupTicker);
+    staleCleanupTicker = null;
+  }
+
   if (stopPublicRooms) {
     stopPublicRooms();
     stopPublicRooms = null;

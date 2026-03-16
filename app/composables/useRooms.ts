@@ -284,7 +284,7 @@ export function useRooms() {
     throw new Error("KHONG_THE_TAO_PHONG");
   }
 
-  async function cleanupStaleRooms(hours = 6) {
+  async function cleanupStaleRooms(hours = 0.05) {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
     const q = query(
       collection(db, "rooms"),

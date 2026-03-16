@@ -3,6 +3,15 @@
     <div class="d-flex align-items-center justify-content-between gap-2 w-100">
       <div class="d-flex align-items-center gap-2">
         <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm room-home-btn"
+          @click="$emit('go-home')"
+        >
+          <span class="d-none d-sm-inline">← Home</span>
+          <span class="d-inline d-sm-none">←</span>
+        </button>
+
+        <button
           class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
           type="button"
           data-bs-toggle="offcanvas"
@@ -92,6 +101,7 @@ const emit = defineEmits<{
   "open-target": [];
   "reset-round": [];
   "close-winner": [];
+  "go-home": [];
 }>();
 
 const suggestModel = computed({
