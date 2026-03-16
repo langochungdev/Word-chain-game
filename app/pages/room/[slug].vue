@@ -69,7 +69,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { usePresence } from "~/composables/usePresence";
 import { useProfile } from "~/composables/useProfile";
 import { useRoom } from "~/composables/useRoom";
@@ -420,6 +427,12 @@ async function sendChat() {
       points: normalizedWord.length,
     };
     messageInput.value = "";
+
+    await nextTick();
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+
     await sendMessage({ uid: uid.value, name: name.value }, normalizedWord);
   } catch (error) {
     optimisticMessage.value = null;
