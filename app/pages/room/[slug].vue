@@ -478,22 +478,25 @@ async function closeWinner() {
   }
 }
 
+async function leaveRoomInBackground(profileUid: string) {
+  try {
+    await stopPresence().catch(() => undefined);
+    await leaveRoom(profileUid, { deleteRoomWhenEmpty: true });
+    joined.value = false;
+  } catch (error) {
+    console.error("Background leave failed", error);
+  }
+}
+
 async function goHomeFromRoom() {
   if (leavingToHome.value) return;
   leavingToHome.value = true;
 
-  try {
-    if (uid.value) {
-      const profileUid = uid.value;
-      await stopPresence().catch(() => undefined);
-      await leaveRoom(profileUid, { deleteRoomWhenEmpty: true });
-      joined.value = false;
-    }
-  } catch (error) {
-    pushActionError(mapError(error));
-  } finally {
-    await router.push("/");
+  if (uid.value) {
+    void leaveRoomInBackground(uid.value);
   }
+
+  await router.push("/");
 }
 
 watch(
